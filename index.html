@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="鄭書涵 Shu-Han Zheng 個人作品集 — 需求收斂 × 技術 PoC × 流程自動化">
+    <title>鄭書涵 Shu-Han Zheng | Portfolio</title>
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="css/variables.css">
+    <link rel="stylesheet" href="css/base.css">
+    <link rel="stylesheet" href="css/components.css">
+    <link rel="stylesheet" href="css/index.css">
+
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@type": "Person",
+        "name": "鄭書涵 Shu-Han Zheng",
+        "jobTitle": "產品工程師｜自動化與資料驅動開發",
+        "description": "需求收斂 × 技術 PoC × 流程自動化",
+        "alumniOf": {
+            "@type": "CollegeOrUniversity",
+            "name": "國立臺北護理健康大學",
+            "department": "健康事業管理系"
+        },
+        "knowsAbout": ["Requirements Gathering", "Workflow Automation", "n8n", "Technical Feasibility", "Python", "Power BI", "SQL", "Data Analysis"],
+        "url": "index.html"
+    }
+    </script>
+</head>
+<body>
+
+    <header class="header--nav-end">
+        <nav class="nav-links" aria-label="主要導覽">
+            <a href="#skills" data-lang-zh="專長" data-lang-en="Skills">專長</a>
+            <a href="#projects" data-lang-zh="作品" data-lang-en="Projects">作品</a>
+            <a href="#education" data-lang-zh="學歷" data-lang-en="Education">學歷</a>
+            <a href="#experience" data-lang-zh="經歷" data-lang-en="Experience">經歷</a>
+            <a href="#autobiography" data-lang-zh="自傳" data-lang-en="Autobiography">自傳</a>
+            <button id="lang-toggle-btn" class="btn-lang" type="button">
+                <i class="fa-solid fa-globe" aria-hidden="true"></i>
+                <span id="lang-text">中文</span>
+            </button>
+        </nav>
+    </header>
+
+    <main>
+        <section class="hero-wrapper" id="about" aria-labelledby="hero-title">
+            <div class="hero-overlay" aria-hidden="true"></div>
+            <div class="hero-content">
+                <div class="hero">
+                    <h1 id="hero-title" data-lang-zh="鄭書涵 Shu-Han Zheng" data-lang-en="Shu-Han Zheng">鄭書涵 Shu-Han Zheng</h1>
+                    <p class="subtitle">
+                        <i class="fa-solid fa-code-compare" aria-hidden="true"></i>
+                        <span data-lang-zh="需求收斂 × 技術 PoC × 流程自動化" data-lang-en="Requirements Scoping × Tech PoC × Workflow Automation">需求收斂 × 技術 PoC × 流程自動化</span>
+                    </p>
+                </div>
+            </div>
+        </section>
+
+        <div class="container">
+
+        <!--- 專長區塊 --->
+            <section class="section-block" id="skills" aria-labelledby="skills-title">
+                <div class="section-header">
+                    <h2 class="section-title" id="skills-title">
+                        <i class="fa-solid fa-wrench" style="color: var(--accent-color);" aria-hidden="true"></i>
+                        <span data-lang-zh="專長" data-lang-en="Skills">專長</span>
+                    </h2>
+                </div>
+
+                <div class="skills-tabs-container" role="tablist" aria-label="專長領域">
+                    <button class="tab-btn active" type="button" role="tab" aria-selected="true" onclick="switchSkillTab(0)">
+                        <i class="fa-solid fa-diagram-next" aria-hidden="true"></i>
+                        <span data-lang-zh="工作流程自動化" data-lang-en="Workflow Automation">工作流程自動化</span>
+                    </button>
+                    <button class="tab-btn" type="button" role="tab" aria-selected="false" onclick="switchSkillTab(1)">
+                        <i class="fa-solid fa-cloud-bolt" aria-hidden="true"></i>
+                        <span data-lang-zh="技術調研與 PoC" data-lang-en="Tech Research &amp; PoC">技術調研與 PoC</span>
+                    </button>
+                    <button class="tab-btn" type="button" role="tab" aria-selected="false" onclick="switchSkillTab(2)">
+                        <i class="fa-solid fa-chart-line" aria-hidden="true"></i>
+                        <span data-lang-zh="資料分析與決策支援" data-lang-en="Data Analysis &amp; Decision Support">資料分析與決策支援</span>
+                    </button>
+                    <button class="tab-btn" type="button" role="tab" aria-selected="false" onclick="switchSkillTab(3)">
+                        <i class="fa-solid fa-list-check" aria-hidden="true"></i>
+                        <span data-lang-zh="需求梳理與專案推進" data-lang-en="Requirements &amp; Project Delivery">需求梳理與專案推進</span>
+                    </button>
+                </div>
+
+                <div class="carousel-wrapper" id="skills-carousel">
+                    <article class="skill-slide active" role="tabpanel">
+                        <div class="slide-header">
+                            <h3 class="slide-title">
+                                <i class="fa-solid fa-diagram-next" aria-hidden="true"></i>
+                                <span data-lang-zh="工作流程自動化與系統整合" data-lang-en="Workflow Automation &amp; Integration">工作流程自動化與系統整合</span>
+                            </h3>
+                            <span class="slide-sub" data-lang-zh="n8n × API｜可迭代的自動化系統" data-lang-en="n8n × API · Iterative systems">n8n × API｜可迭代的自動化系統</span>
+                        </div>
+                        <p class="slide-desc" data-lang-zh="用 n8n 串接內容與多渠道發布流程，整合 OpenAI API、Webhook 與郵件／社群介面；能獨立完成串接、錯誤處理與流程穩定化，把重複作業變成可維運的自動化系統。" data-lang-en="I independently build n8n workflows that connect content pipelines to multi-channel publishing—OpenAI API, webhooks, email, and social—covering integration, error handling, and reliability so repetitive work becomes maintainable automation.">用 n8n 串接內容與多渠道發布流程，整合 OpenAI API、Webhook 與郵件／社群介面；能獨立完成串接、錯誤處理與流程穩定化，把重複作業變成可維運的自動化系統。</p>
+                        <div class="slide-chips">
+                            <span class="slide-chip">n8n</span>
+                            <span class="slide-chip">OpenAI API</span>
+                            <span class="slide-chip" data-lang-zh="Prompt 優化" data-lang-en="Prompt Engineering">Prompt 優化</span>
+                            <span class="slide-chip">RAG</span>
+                        </div>
+                    </article>
+
+                    <article class="skill-slide" role="tabpanel">
+                        <div class="slide-header">
+                            <h3 class="slide-title">
+                                <i class="fa-solid fa-cloud-bolt" aria-hidden="true"></i>
+                                <span data-lang-zh="技術調研與可行性（PoC）" data-lang-en="Tech Research &amp; Feasibility (PoC)">技術調研與可行性（PoC）</span>
+                            </h3>
+                            <span class="slide-sub" data-lang-zh="測試比對｜降低導入風險" data-lang-en="Test · Compare · Lower risk">測試比對｜降低導入風險</span>
+                        </div>
+                        <p class="slide-desc" data-lang-zh="依專案需求調研 AWS（SES）與多項 SaaS，進行功能驗證與 API 測試，產出方案比對與導入建議，協助團隊在「做／不做／替代方案」之間做出有依據的決策。" data-lang-en="I research AWS (SES) and SaaS options against project needs, run functional and API tests, and produce comparison notes so the team can decide—with evidence—whether to ship, skip, or substitute.">依專案需求調研 AWS（SES）與多項 SaaS，進行功能驗證與 API 測試，產出方案比對與導入建議，協助團隊在「做／不做／替代方案」之間做出有依據的決策。</p>
+                        <div class="slide-chips">
+                            <span class="slide-chip">AWS SES</span>
+                            <span class="slide-chip" data-lang-zh="SaaS 評估" data-lang-en="SaaS Evaluation">SaaS 評估</span>
+                            <span class="slide-chip" data-lang-zh="API 驗證" data-lang-en="API Validation">API 驗證</span>
+                            <span class="slide-chip" data-lang-zh="方案取捨" data-lang-en="Trade-offs">方案取捨</span>
+                        </div>
+                    </article>
+
+                    <article class="skill-slide" role="tabpanel">
+                        <div class="slide-header">
+                            <h3 class="slide-title">
+                                <i class="fa-solid fa-chart-line" aria-hidden="true"></i>
+                                <span data-lang-zh="資料分析與決策支援" data-lang-en="Data Analysis &amp; Decision Support">資料分析與決策支援</span>
+                            </h3>
+                            <span class="slide-sub" data-lang-zh="清洗建模｜儀表板｜決策依據" data-lang-en="Clean · Model · Decide">清洗建模｜儀表板｜決策依據</span>
+                        </div>
+                        <p class="slide-desc" data-lang-zh="用 Python 清洗與整合多源資料，必要時將非結構化文本結構化；以 Power BI 與 SQL 建立互動儀表板與查詢分析，協助團隊快速掌握市場、問卷與研究結果並作為決策依據。" data-lang-en="I clean and integrate multi-source data with Python—structuring unstructured text when needed—and build Power BI dashboards and SQL analyses so teams can quickly grasp market, survey, and research results and use them as a basis for decisions.">用 Python 清洗與整合多源資料，必要時將非結構化文本結構化；以 Power BI 與 SQL 建立互動儀表板與查詢分析，協助團隊快速掌握市場、問卷與研究結果並作為決策依據。</p>
+                        <div class="slide-chips">
+                            <span class="slide-chip">Python</span>
+                            <span class="slide-chip">Power BI</span>
+                            <span class="slide-chip">SQL</span>
+                            <span class="slide-chip" data-lang-zh="資料視覺化" data-lang-en="Data Visualization">資料視覺化</span>
+                        </div>
+                    </article>
+
+                    <article class="skill-slide" role="tabpanel">
+                        <div class="slide-header">
+                            <h3 class="slide-title">
+                                <i class="fa-solid fa-list-check" aria-hidden="true"></i>
+                                <span data-lang-zh="需求梳理與專案推進" data-lang-en="Requirements &amp; Project Delivery">需求梳理與專案推進</span>
+                            </h3>
+                            <span class="slide-sub" data-lang-zh="對齊方向｜追進度｜把關交付" data-lang-en="Align · Track · Deliver">對齊方向｜追進度｜把關交付</span>
+                        </div>
+                        <p class="slide-desc" data-lang-zh="把模糊需求收斂成可執行範圍與優先順序；在跨角色溝通中追進度、對齊取捨，確保方案能準時、可用地交付。" data-lang-en="I distill ambiguous needs into actionable scope and priorities, and keep cross-functional stakeholders aligned on trade-offs so work is delivered on time and ready to use.">把模糊需求收斂成可執行範圍與優先順序；在跨角色溝通中追進度、對齊取捨，確保方案能準時、可用地交付。</p>
+                        <div class="slide-chips">
+                            <span class="slide-chip" data-lang-zh="需求收斂" data-lang-en="Requirements Scoping">需求收斂</span>
+                            <span class="slide-chip" data-lang-zh="進度與風險溝通" data-lang-en="Progress &amp; Risk">進度與風險溝通</span>
+                            <span class="slide-chip" data-lang-zh="交付品質" data-lang-en="Delivery Quality">交付品質</span>
+                        </div>
+                    </article>
+
+                    <div class="carousel-controls">
+                        <button class="carousel-nav-btn" type="button" onclick="prevSkillSlide()" aria-label="上一張">
+                            <i class="fa-solid fa-chevron-left" aria-hidden="true"></i>
+                        </button>
+                        <button class="carousel-nav-btn" type="button" onclick="nextSkillSlide()" aria-label="下一張">
+                            <i class="fa-solid fa-chevron-right" aria-hidden="true"></i>
+                        </button>
+                    </div>
+                </div>
+            </section>
+
+            <!--- 作品區塊 --->
+            <section class="section-block" id="projects" aria-labelledby="projects-title">
+                <div class="section-header">
+                    <h2 class="section-title" id="projects-title">
+                        <i class="fa-solid fa-folder-open" style="color: var(--accent-color);" aria-hidden="true"></i>
+                        <span data-lang-zh="作品" data-lang-en="Projects">作品</span>
+                    </h2>
+                </div>
+
+                <div class="project-carousel" id="project-carousel" tabindex="0" role="group" aria-label="作品卡片，可左右捲動">
+                <div class="project-viewport">
+                <div class="project-grid" id="project-track">
+                    <article class="project-card">
+                        <div class="project-body">
+                            <span class="project-badge" data-lang-zh="工作流程自動化" data-lang-en="Workflow Automation">流程自動化</span>
+                            <h3 class="project-title" data-lang-zh="AI 摘要新聞與多渠道內容發布系統" data-lang-en="AI News Summarization &amp; Multi-Channel Content Publishing System">AI 摘要新聞與多渠道內容發布系統</h3>
+                            <p class="project-desc" data-lang-zh="以 n8n 歷經三次迭代：新聞經 RAG 摘要後發送至 Gmail／Discord，並以 Prompt 生成文案自動發布至 Threads。" data-lang-en="Iterated three times in n8n: news is summarized with RAG and sent to Gmail/Discord, then prompt-generated copy is auto-published to Threads.">以 n8n 歷經三次迭代：新聞經 RAG 摘要後發送至 Gmail／Discord，並以 Prompt 生成文案自動發布至 Threads。</p>
+                        </div>
+                        <footer class="project-footer">
+                            <div class="project-tags">
+                                <span class="project-tag">n8n</span>
+                                <span class="project-tag">RAG</span>
+                                <span class="project-tag">API</span>
+                                <span class="project-tag" data-lang-zh="Prompt 優化" data-lang-en="Prompt Engineering">Prompt 優化</span>
+                            </div>
+                            <div class="project-btn-wrapper">
+                                <a href="n8n.html" class="btn-project">
+                                    <span data-lang-zh="查看詳細內容" data-lang-en="View Details">查看詳細內容</span>
+                                    <i class="fa-solid fa-arrow-right" aria-hidden="true"></i>
+                                </a>
+                            </div>
+                        </footer>
+                    </article>
+
+                    <article class="project-card">
+                        <div class="project-body">
+                            <span class="project-badge" data-lang-zh="需求取捨 × 技術 PoC" data-lang-en="Trade-offs × Tech PoC">需求取捨 × 技術 PoC</span>
+                            <h3 class="project-title" data-lang-zh="登入通知自動化導入評估" data-lang-en="Login Notification Feasibility Assessment">登入通知自動化導入評估</h3>
+                            <p class="project-desc" data-lang-zh="以登入通知為情境，界定成功標準，再比較 AWS SES、SaaS 與維持現狀，提出分階段導入建議。" data-lang-en="Used login notifications as the scenario, defined success criteria, then compared AWS SES, SaaS, and the status quo, and proposed a staged adoption plan.">以登入通知為情境，界定成功標準，再比較 AWS SES、SaaS 與維持現狀，提出分階段導入建議。</p>
+                        </div>
+                        <footer class="project-footer">
+                            <div class="project-tags">
+                                <span class="project-tag" data-lang-zh="需求收斂" data-lang-en="Requirements Scoping">需求收斂</span>
+                                <span class="project-tag">AWS SES</span>
+                                <span class="project-tag">PoC</span>
+                                <span class="project-tag" data-lang-zh="方案取捨" data-lang-en="Trade-offs">方案取捨</span>
+                            </div>
+                            <div class="project-btn-wrapper">
+                                <a href="poc.html" class="btn-project">
+                                    <span data-lang-zh="查看詳細內容" data-lang-en="View Details">查看詳細內容</span>
+                                    <i class="fa-solid fa-arrow-right" aria-hidden="true"></i>
+                                </a>
+                            </div>
+                        </footer>
+                    </article>
+
+                    <article class="project-card">
+                        <div class="project-body">
+                            <span class="project-badge" data-lang-zh="資料分析 × 文字探勘" data-lang-en="Data Analysis × Text Mining">資料分析 × 文字探勘</span>
+                            <h3 class="project-title" data-lang-zh="Airbnb 房源品質與評論洞察" data-lang-en="Airbnb Listing Quality &amp; Review Insights">Airbnb 房源品質與評論洞察</h3>
+                            <p class="project-desc" data-lang-zh="以臺北市 Inside Airbnb 資料定義品質指標，對照行政區／價格帶／住宿類型落差，用 spaCy 抽取評論主題、Power BI 呈現，排出可驗證的改善優先順序。" data-lang-en="Defined quality metrics on Taipei Inside Airbnb data, compared gaps by district, price band, and stay type, extracted review themes with spaCy, and used Power BI to rank testable improvement priorities.">以臺北市 Inside Airbnb 資料定義品質指標，對照行政區／價格帶／住宿類型落差，用 spaCy 抽取評論主題、Power BI 呈現，排出可驗證的改善優先順序。</p>
+                        </div>
+                        <footer class="project-footer">
+                            <div class="project-tags">
+                                <span class="project-tag">pandas</span>
+                                <span class="project-tag">SQL</span>
+                                <span class="project-tag">spaCy</span>
+                                <span class="project-tag">Power BI</span>
+                            </div>
+                            <div class="project-btn-wrapper">
+                                <a href="airbnb.html" class="btn-project">
+                                    <span data-lang-zh="查看詳細內容" data-lang-en="View Details">查看詳細內容</span>
+                                    <i class="fa-solid fa-arrow-right" aria-hidden="true"></i>
+                                </a>
+                            </div>
+                        </footer>
+                    </article>
+
+                    <article class="project-card">
+                        <div class="project-body">
+                            <span class="project-badge" data-lang-zh="資料分析" data-lang-en="Data Analysis">資料分析</span>
+                            <h3 class="project-title" data-lang-zh="西醫師健保議題改善建議分析" data-lang-en="Analysis of Physicians' NHI Improvement Recommendations">西醫師健保議題改善建議分析</h3>
+                            <p class="project-desc" data-lang-zh="分析 1,032 位西醫師的開放式健保建議，以 NVivo、ChatGPT、SAS 與 Power BI 收斂兩族群前約 30% 核心改善議題。" data-lang-en="Analyzed 1,032 physicians' open-ended NHI recommendations with NVivo, ChatGPT, SAS, and Power BI to distill each group's top ~30% core improvement issues.">分析 1,032 位西醫師的開放式健保建議，以 NVivo、ChatGPT、SAS 與 Power BI 收斂兩族群前約 30% 核心改善議題。</p>
+                        </div>
+                        <footer class="project-footer">
+                            <div class="project-tags">
+                                <span class="project-tag">NVivo 12</span>
+                                <span class="project-tag">ChatGPT 3.5</span>
+                                <span class="project-tag">SAS 9.4</span>
+                                <span class="project-tag">Power BI</span>
+                            </div>
+                            <div class="project-btn-wrapper">
+                                <a href="paper.html" class="btn-project">
+                                    <span data-lang-zh="查看詳細內容" data-lang-en="View Details">查看詳細內容</span>
+                                    <i class="fa-solid fa-arrow-right" aria-hidden="true"></i>
+                                </a>
+                            </div>
+                        </footer>
+                    </article>
+                </div>
+                </div>
+                <div class="project-dots" id="project-dots" role="tablist" aria-label="作品分頁"></div>
+                </div>
+            </section>
+
+            <!--- 學歷區塊 --->
+            <section class="section-block no-card-block" id="education" aria-labelledby="education-title">
+                <div class="section-header">
+                    <h2 class="section-title" id="education-title">
+                        <i class="fa-solid fa-graduation-cap" style="color: var(--accent-color);" aria-hidden="true"></i>
+                        <span data-lang-zh="學歷" data-lang-en="Education">學歷</span>
+                    </h2>
+                </div>
+
+                <article class="info-card">
+                    <div class="timeline-header">
+                        <div>
+                            <h3 class="role-title" data-lang-zh="國立臺北護理健康大學 ｜ 健康事業管理系 碩士" data-lang-en="Master's in Health Care Management, NTUNHS">國立臺北護理健康大學 ｜ 健康事業管理系 碩士</h3>
+                            <p class="company-name" data-lang-zh="碩士論文：台灣西醫師對健保制度相關議題的改善建議分析" data-lang-en="Thesis: Analysis of Taiwanese Physicians' Recommendations on NHI Issues">碩士論文：台灣西醫師對健保制度相關議題的改善建議分析</p>
+                        </div>
+                        <time class="time-badge" datetime="2021-09/2023-07">2021/09 – 2023/07</time>
+                    </div>
+                </article>
+
+                <article class="info-card">
+                    <div class="timeline-header">
+                        <div>
+                            <h3 class="role-title" data-lang-zh="國立臺北護理健康大學 ｜ 健康事業管理系 學士" data-lang-en="Bachelor's in Health Care Management, NTUNHS">國立臺北護理健康大學 ｜ 健康事業管理系 學士</h3>
+                        </div>
+                        <time class="time-badge" datetime="2017-09/2021-06">2017/09 – 2021/06</time>
+                    </div>
+                </article>
+            </section>
+
+            <!--- 經歷區塊 --->
+            <section class="section-block" id="experience" aria-labelledby="experience-title">
+                <div class="section-header">
+                    <h2 class="section-title" id="experience-title">
+                        <i class="fa-solid fa-briefcase" style="color: var(--accent-color);" aria-hidden="true"></i>
+                        <span data-lang-zh="經歷" data-lang-en="Experience">經歷</span>
+                    </h2>
+                </div>
+
+                <article class="info-card">
+                    <div class="timeline-header">
+                        <div>
+                            <h3 class="role-title" data-lang-zh="專案推進｜工作流程自動化與資料分析" data-lang-en="Project Delivery | Workflow Automation &amp; Data Analysis">專案推進｜工作流程自動化與資料分析</h3>
+                        </div>
+                        <time class="time-badge" datetime="2025-03/2026-01">2025/03 – 2026/01</time>
+                    </div>
+                    <ul class="custom-bullet-list">
+                        <li data-lang-zh="<strong>需求對齊與產品推進：</strong>負責跨角色溝通與進度追蹤，透過競品與市場觀察梳理優化方向，協助團隊收斂範圍、對齊取捨與交付品質。" data-lang-en="<strong>Requirements Alignment &amp; Product Delivery:</strong> Handled cross-functional communication and schedule tracking; used competitive and market insights to refine priorities, align trade-offs, and safeguard delivery quality."><strong>需求對齊與產品推進：</strong>負責跨角色溝通與進度追蹤，透過競品與市場觀察梳理優化方向，協助團隊收斂範圍、對齊取捨與交付品質。</li>
+                        <li data-lang-zh="<strong>工作流程自動化（n8n／API）：</strong>以 n8n 建置自動化流程，整合 OpenAI API 做摘要與內容產出，並串接 Threads、Discord Webhook、Gmail API，讓社群發布與通知可重複執行、可維運。" data-lang-en="<strong>Workflow Automation (n8n / API):</strong> Built n8n workflows with OpenAI for summarization and content generation, integrating Threads, Discord webhooks, and the Gmail API so publishing and alerts are repeatable and maintainable."><strong>工作流程自動化（n8n／API）：</strong>以 n8n 建置自動化流程，整合 OpenAI API 做摘要與內容產出，並串接 Threads、Discord Webhook、Gmail API，讓社群發布與通知可重複執行、可維運。</li>
+                        <li data-lang-zh="<strong>技術調研與可行性（PoC）：</strong>針對 AWS（SES）與多項 SaaS 做功能與 API 驗證，比對自動化發信與資料儲存方案，提出導入／替代建議以降低風險。" data-lang-en="<strong>Tech Research &amp; PoC:</strong> Validated AWS (SES) and multiple SaaS options through functional and API tests; compared automated email and data-storage approaches and recommended adopt, skip, or substitute to reduce risk."><strong>技術調研與可行性（PoC）：</strong>針對 AWS（SES）與多項 SaaS 做功能與 API 驗證，比對自動化發信與資料儲存方案，提出導入／替代建議以降低風險。</li>
+                        <li data-lang-zh="<strong>資料分析與決策支援：</strong>蒐集並清洗公開資料與問卷，以 Power BI 建立儀表板，協助團隊快速掌握結果並作為討論依據。" data-lang-en="<strong>Data Analysis &amp; Decision Support:</strong> Collected and cleaned public and survey data; built Power BI dashboards so the team could grasp results quickly and use them as a basis for discussion."><strong>資料分析與決策支援：</strong>蒐集並清洗公開資料與問卷，以 Power BI 建立儀表板，協助團隊快速掌握結果並作為討論依據。</li>
+                    </ul>
+                </article>
+
+                <article class="info-card">
+                    <div class="timeline-header">
+                        <div>
+                            <h3 class="role-title" data-lang-zh="研究助理 / 課堂助教" data-lang-en="Research Assistant / Teaching Assistant">研究助理 / 課堂助教</h3>
+                            <p class="company-name" data-lang-zh="國立臺北護理健康大學健康事業管理所" data-lang-en="Department of Health Care Management, NTUNHS">國立臺北護理健康大學健康事業管理所</p>
+                        </div>
+                        <time class="time-badge" datetime="2022-04/2022-12">2022/04 – 2022/12</time>
+                    </div>
+                    <ul class="custom-bullet-list">
+                        <li data-lang-zh="<strong>研究專案規劃與計畫撰寫：</strong>參與研究計畫書之撰寫與文獻彙整，協助界定研究問題與設計方法論，確保計畫符合學術規範與資助單位要求。" data-lang-en="<strong>Research Project Planning:</strong> Contributed to research proposals and literature reviews; helped define research questions and methodology to meet academic standards and funder requirements."><strong>研究專案規劃與計畫撰寫：</strong>參與研究計畫書之撰寫與文獻彙整，協助界定研究問題與設計方法論，確保計畫符合學術規範與資助單位要求。</li>
+                        <li data-lang-zh="<strong>課堂助教與技術指導：</strong>擔任課堂助教，負責 Power BI 技術指導、諮詢與問題排解；引導學生進行資料建模與視覺化呈現。" data-lang-en="<strong>Teaching Assistant &amp; Technical Guidance:</strong> Served as a course TA for Power BI, providing technical guidance, consultation, and troubleshooting; guided students in data modeling and visualization."><strong>課堂助教與技術指導：</strong>擔任課堂助教，負責 Power BI 技術指導、諮詢與問題排解；引導學生進行資料建模與視覺化呈現。</li>
+                        <li data-lang-zh="<strong>數據前處理與 NLP 應用：</strong>應用 Python (Pandas) 進行多源資料整合與清洗；針對非結構化文本，運用 Python (spaCy) 進行斷詞與實體辨識 (NER)，並研究 PyTorch 深度學習模型於 NLP 分析之可行性。" data-lang-en="<strong>Data Preprocessing &amp; NLP:</strong> Integrated and cleaned multi-source data with Python (pandas); applied spaCy for tokenization and NER on unstructured text; explored the feasibility of PyTorch deep-learning models for NLP analysis."><strong>數據前處理與 NLP 應用：</strong>應用 Python (Pandas) 進行多源資料整合與清洗；針對非結構化文本，運用 Python (spaCy) 進行斷詞與實體辨識 (NER)，並研究 PyTorch 深度學習模型於 NLP 分析之可行性。</li>
+                    </ul>
+                </article>
+            </section>
+
+            <!--- 自傳區塊 --->
+            <section class="section-block no-card-block" id="autobiography" aria-labelledby="auto-preview-title">
+                <div class="section-header">
+                    <h2 class="section-title" id="auto-preview-title">
+                        <i class="fa-solid fa-address-card" style="color: var(--accent-color);" aria-hidden="true"></i>
+                        <span data-lang-zh="自傳" data-lang-en="Autobiography">自傳</span>
+                    </h2>
+                </div>
+
+                <article class="autobiography-card">
+                    <p class="auto-content" data-lang-zh="我是鄭書涵，碩士畢業於國立臺北護理健康大學健康事業管理系。過去兩年的專案與資料分析經驗，讓我習慣用需求梳理對齊方向，再用工作流程自動化、資料分析與技術 PoC 把方案驗證落地。我正積極尋求產品工程師與專案／產品推進相關職位，期望發揮業務敏銳度、跨團隊溝通，以及流程自動化與技術調研的硬實力，成為團隊中「對齊方向、也能動手落地」的可靠夥伴。" data-lang-en="I am Shu-Han Zheng, and I hold a Master's in Health Care Management from NTUNHS. Two years of project and analytics work taught me to align direction through requirements, then validate and ship with workflow automation, data analysis, and technical PoCs. I am actively seeking Product Engineer and project/product delivery roles, where I can combine business sense, cross-team communication, and hands-on automation and tech research—and be a reliable partner who both aligns direction and ships.">我是鄭書涵，碩士畢業於國立臺北護理健康大學健康事業管理系。過去兩年的專案與資料分析經驗，讓我習慣用需求梳理對齊方向，再用工作流程自動化、資料分析與技術 PoC 把方案驗證落地。我正積極尋求產品工程師與專案／產品推進相關職位，期望發揮業務敏銳度、跨團隊溝通，以及流程自動化與技術調研的硬實力，成為團隊中「對齊方向、也能動手落地」的可靠夥伴。</p>
+                    <div style="text-align: center;">
+                        <a href="autobiography.html" class="btn-toggle-auto">
+                            <span data-lang-zh="查看完整自傳" data-lang-en="Read Full Autobiography">查看完整自傳</span>
+                            <i class="fa-solid fa-arrow-right" aria-hidden="true"></i>
+                        </a>
+                    </div>
+                </article>
+            </section>
+
+        </div>
+    </main>
+
+    <footer>
+        <p>© 鄭書涵 Shu-Han Zheng | Personal Portfolio</p>
+    </footer>
+
+    <script src="js/common.js"></script>
+    <script src="js/index.js"></script>
+</body>
+</html>

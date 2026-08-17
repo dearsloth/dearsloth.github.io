@@ -1,0 +1,546 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="台灣西醫師對健保制度相關議題的改善建議分析 — 鄭書涵碩士論文專案展示">
+    <title>台灣西醫師對健保制度相關議題的改善建議分析 | 鄭書涵 Portfolio</title>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="css/variables.css">
+    <link rel="stylesheet" href="css/base.css">
+    <link rel="stylesheet" href="css/components.css">
+    <link rel="stylesheet" href="css/project.css">
+
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@type": "CreativeWork",
+        "name": "台灣西醫師對健保制度相關議題的改善建議分析",
+        "author": { "@type": "Person", "name": "鄭書涵 Shu-Han Zheng" },
+        "description": "分析 1,032 位基層西醫師與醫院西醫師對健保制度的主要改善建議",
+        "keywords": ["基層西醫師", "醫院西醫師", "健保制度", "內容分析", "ChatGPT", "資料視覺化"],
+        "dateCreated": "2023"
+    }
+    </script>
+
+    <style>
+        /* 左側大綱：三欄置中，文章在正中，大綱貼在文章左側 */
+        .container--with-toc {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) minmax(0, 960px) minmax(0, 1fr);
+            column-gap: 1.75rem;
+            width: 100%;
+            max-width: none;
+            margin-left: auto;
+            margin-right: auto;
+            padding-left: 1rem;
+            padding-right: 1rem;
+            box-sizing: border-box;
+            align-items: start;
+        }
+        .container--with-toc > .project-toc {
+            grid-column: 1;
+            justify-self: end;
+            width: 100%;
+            max-width: 20rem;
+            position: sticky;
+            top: 5.5rem;
+            max-height: calc(100vh - 6.5rem);
+            overflow-y: auto;
+            padding: 0.85rem 0;
+            text-align: left;
+        }
+        .container--with-toc > article {
+            grid-column: 2;
+            min-width: 0;
+            width: 100%;
+        }
+        .project-toc-label {
+            display: block;
+            margin: 0 0 0.85rem 0;
+            padding: 0;
+            font-size: 0.88rem;
+            font-weight: 800;
+            line-height: 1.35;
+            letter-spacing: 0;
+            text-transform: none;
+            text-align: left;
+            color: var(--text-level-1);
+            text-decoration: none;
+            transition: color 0.2s ease;
+        }
+        .project-toc-label:hover,
+        .project-toc-label.is-active {
+            color: var(--accent-color);
+        }
+        .project-toc-list {
+            list-style: none;
+            margin: 0;
+            padding: 0;
+            text-align: left;
+        }
+        .project-toc-list .project-toc-item > a {
+            display: block;
+            padding: 0.45rem 0;
+            border-left: none;
+            color: var(--text-level-4);
+            text-decoration: none;
+            text-align: left;
+            font-size: 0.95rem;
+            line-height: 1.4;
+            transition: color 0.2s ease;
+        }
+        .project-toc-list .project-toc-item > a:hover {
+            color: var(--accent-color);
+            background: transparent;
+        }
+        .project-toc-list .project-toc-item > a.is-active {
+            color: var(--accent-color);
+            font-weight: 600;
+            background: transparent;
+        }
+        .project-toc-item {
+            margin: 0;
+        }
+        .project-toc-subs-wrap {
+            display: grid;
+            grid-template-rows: 0fr;
+            transition: grid-template-rows 0.28s ease;
+        }
+        .project-toc-item:hover .project-toc-subs-wrap,
+        .project-toc-item:focus-within .project-toc-subs-wrap {
+            grid-template-rows: 1fr;
+        }
+        .project-toc-subs {
+            list-style: none;
+            margin: 0;
+            padding: 0 0 0 0.75rem;
+            overflow: hidden;
+            min-height: 0;
+        }
+        .project-toc-subs li {
+            padding: 0;
+        }
+        .project-toc-subs a {
+            display: block;
+            padding: 0.2rem 0;
+            font-size: 0.82rem;
+            line-height: 1.4;
+            color: var(--text-muted);
+            text-decoration: none;
+            transition: color 0.2s ease;
+        }
+        .project-toc-item:hover .project-toc-subs a,
+        .project-toc-item:focus-within .project-toc-subs a {
+            color: var(--text-level-4);
+        }
+        .project-toc-subs a:hover {
+            color: var(--accent-color);
+        }
+        @media (max-width: 1200px) {
+            .container--with-toc {
+                grid-template-columns: 1fr;
+                max-width: 960px;
+                margin-left: auto;
+                margin-right: auto;
+                column-gap: 0;
+            }
+            .container--with-toc > .project-toc,
+            .container--with-toc > article {
+                grid-column: 1;
+                justify-self: stretch;
+                max-width: none;
+            }
+            .container--with-toc > .project-toc {
+                position: static;
+                max-height: none;
+                overflow: visible;
+                margin-bottom: 0.5rem;
+                padding: 0.75rem 0 0.85rem;
+                border-bottom: 1px solid var(--border-color);
+            }
+            .project-toc-list .project-toc-item > a {
+                font-size: 0.95rem;
+            }
+            .project-toc-label {
+                font-size: 0.88rem;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <header class="header--with-logo">
+        <a href="index.html" class="header-logo">鄭書涵 Shu-Han Zheng</a>
+        <nav class="nav-links" aria-label="主要導覽">
+            <button id="lang-toggle-btn" class="btn-lang" type="button">
+                <i class="fa-solid fa-globe" aria-hidden="true"></i>
+                <span id="lang-text">中文</span>
+            </button>
+        </nav>
+    </header>
+
+    <main class="container container--project container--with-toc">
+        <nav class="project-toc" aria-label="頁面大綱">
+            <a href="#hero" class="project-toc-label" data-lang-zh="台灣西醫師對健保制度相關議題的改善建議分析" data-lang-en="Analysis of Western Physicians' Improvement Recommendations on Taiwan's NHI System Issues">台灣西醫師對健保制度相關議題的改善建議分析</a>
+            <ul class="project-toc-list">
+                <li class="project-toc-item"><a href="#stage1" data-lang-zh="研究背景" data-lang-en="Research Background">研究背景</a></li>
+                <li class="project-toc-item"><a href="#stage2" data-lang-zh="執行方案" data-lang-en="Execution Approach">執行方案</a></li>
+                <li class="project-toc-item"><a href="#stage3" data-lang-zh="風險控管與品質管理" data-lang-en="Risk Control and Quality Management">風險控管與品質管理</a></li>
+                <li class="project-toc-item"><a href="#stage4" data-lang-zh="核心數據洞察" data-lang-en="Key Data Insights">核心數據洞察</a></li>
+                <li class="project-toc-item"><a href="#stage5" data-lang-zh="研究建議" data-lang-en="Research Recommendations">研究建議</a></li>
+                <li class="project-toc-item"><a href="#team-info" data-lang-zh="研究團隊與發表資訊" data-lang-en="Research Team and Publication Information">研究團隊與發表資訊</a></li>
+            </ul>
+        </nav>
+        <article>
+            <section id="hero" class="hero-project" aria-labelledby="paper-title">
+                <p class="hero-project-brand" data-lang-zh="資料分析" data-lang-en="Data Analysis">資料分析</p>
+                <h1 id="paper-title" data-lang-zh="台灣西醫師對健保制度相關議題的改善建議分析" data-lang-en="Analysis of Western Physicians' Improvement Recommendations on Taiwan's NHI System Issues">台灣西醫師對健保制度相關議題的改善建議分析</h1>
+                <p class="hero-project-lead" data-lang-zh="以 1,032 位基層西醫師與醫院西醫師的開放式意見，整理健保制度的主要改善建議" data-lang-en="Open-ended feedback from 1,032 clinic-based and hospital-based western physicians, distilled into key NHI improvement recommendations">以 1,032 位基層西醫師與醫院西醫師的開放式意見，整理健保制度的主要改善建議</p>
+                <p data-lang-zh="本研究使用 2023 年「我國西醫師萬人關鍵調查報告」資料，分析全台 1,032 位西醫師（基層西醫師 669 位、醫院西醫師 363 位）對健保制度的非結構化建議。編碼以 NVivo 12 為主，並以 ChatGPT 3.5 作為第三方輔助；統計採 SAS 9.4 進行描述性統計與費雪精確檢定；結果再以 Power BI 製成矩陣式樹狀結構圖、文字雲與桑基圖，依重要性原則收斂兩族群最常提出的改善建議。" data-lang-en="This study uses data from the 2023 “Key Survey of Western Medicine Physicians per Ten Thousand Population in Our Country,” analyzing unstructured NHI recommendations from 1,032 western physicians nationwide (669 clinic-based and 363 hospital-based). Coding relied primarily on NVivo 12, with ChatGPT 3.5 as a third-party aid; SAS 9.4 was used for descriptive statistics and Fisher’s exact tests; results were visualized in Power BI with treemaps, word clouds, and Sankey diagrams, and interpreted by the principle of importance.">本研究使用 2023 年「我國西醫師萬人關鍵調查報告」資料，分析全台 1,032 位西醫師（基層西醫師 669 位、醫院西醫師 363 位）對健保制度的非結構化建議。編碼以 NVivo 12 為主，並以 ChatGPT 3.5 作為第三方輔助；統計採 SAS 9.4 進行描述性統計與費雪精確檢定；結果再以 Power BI 製成矩陣式樹狀結構圖、文字雲與桑基圖，依重要性原則收斂兩族群最常提出的改善建議。</p>
+                <div class="tag-group">
+                    <span class="tag">NVivo 12</span>
+                    <span class="tag">ChatGPT 3.5</span>
+                    <span class="tag">SAS 9.4</span>
+                    <span class="tag">Power BI</span>
+                </div>
+            </section>
+<!--
+            <nav class="timeline-wrapper" aria-label="專案生命週期">
+                <p class="timeline-title" data-lang-zh="📍 專案生命週期時間軸" data-lang-en="📍 Project Lifecycle Timeline">📍 專案生命週期時間軸</p>
+                <div class="timeline-nav">
+                    <a href="#stage1" class="timeline-node">
+                        <div class="node-dot">01</div>
+                        <div class="node-label" data-lang-zh="專案啟動" data-lang-en="Initiating">專案啟動</div>
+                        <div class="tooltip-card" data-lang-zh="<strong>01. 專案啟動</strong><br>• 問題陳述與目標<br>• 範疇界定與利害關係人" data-lang-en="<strong>01. Initiating</strong><br>• Problem statement &amp; objectives<br>• Scope &amp; stakeholders">
+                            <strong>01. 專案啟動</strong><br>
+                            • 問題陳述與目標<br>
+                            • 範疇界定與利害關係人
+                        </div>
+                    </a>
+                    <a href="#stage2" class="timeline-node">
+                        <div class="node-dot">02</div>
+                        <div class="node-label" data-lang-zh="專案規劃" data-lang-en="Planning">專案規劃</div>
+                        <div class="tooltip-card" data-lang-zh="<strong>02. 專案規劃</strong><br>• 混合研究法設計<br>• 信度與品質控制" data-lang-en="<strong>02. Planning</strong><br>• Mixed-methods design<br>• Reliability &amp; quality control">
+                            <strong>02. 專案規劃</strong><br>
+                            • 混合研究法設計<br>
+                            • 信度與品質控制
+                        </div>
+                    </a>
+                    <a href="#stage3" class="timeline-node">
+                        <div class="node-dot">03</div>
+                        <div class="node-label" data-lang-zh="專案執行" data-lang-en="Executing">專案執行</div>
+                        <div class="tooltip-card" data-lang-zh="<strong>03. 專案執行</strong><br>• 文字預處理與編碼<br>• SAS 顯著性檢定" data-lang-en="<strong>03. Executing</strong><br>• Text preprocessing &amp; coding<br>• SAS significance testing">
+                            <strong>03. 專案執行</strong><br>
+                            • 文字預處理與編碼<br>
+                            • SAS 顯著性檢定
+                        </div>
+                    </a>
+                    <a href="#stage4" class="timeline-node">
+                        <div class="node-dot">04</div>
+                        <div class="node-label" data-lang-zh="監控與控管" data-lang-en="Monitoring">監控與控管</div>
+                        <div class="tooltip-card" data-lang-zh="<strong>04. 監控與控管</strong><br>• Power BI 多維視覺化<br>• 核心訴求與統計洞察" data-lang-en="<strong>04. Monitoring &amp; Controlling</strong><br>• Power BI visualization<br>• Core insights &amp; statistics">
+                            <strong>04. 監控與控管</strong><br>
+                            • Power BI 多維視覺化<br>
+                            • 核心訴求與統計洞察
+                        </div>
+                    </a>
+                    <a href="#stage5" class="timeline-node">
+                        <div class="node-dot">05</div>
+                        <div class="node-label" data-lang-zh="結束 / 結案" data-lang-en="Closing">結束 / 結案</div>
+                        <div class="tooltip-card" data-lang-zh="<strong>05. 結束 / 結案</strong><br>• 政策與制度變革建議<br>• IT 與自費發展策略" data-lang-en="<strong>05. Closing</strong><br>• Policy &amp; institutional recommendations<br>• IT &amp; self-pay strategies">
+                            <strong>05. 結束 / 結案</strong><br>
+                            • 政策與制度變革建議<br>
+                            • IT 與自費發展策略
+                        </div>
+                    </a>
+                </div>
+            </nav>
+-->
+
+            <!-- 01 研究背景 -->
+            <section id="stage1" class="timeline-card">
+                <h2 class="stage-title"><span data-lang-zh="研究背景" data-lang-en="Research Background">研究背景</span></h2>
+                <p data-lang-zh="台灣全民健康保險以高覆蓋率、低價格與高品質聞名，但隨人口高齡化與醫療環境轉變，健保仍面對點值偏低、財務壓力、醫療資源浪費，以及醫事人員流失等問題。基層西醫師與醫院西醫師站在第一線，最清楚制度落地時的摩擦；過去研究卻較少以開放式、非結構化方式，系統整理全國西醫師對整體健保制度的建議。因此，我以 2023 年「我國西醫師萬人關鍵調查報告」中 1,032 位西醫師的開放式回覆作為分析對象。" data-lang-en="Taiwan’s National Health Insurance is known for high coverage, low cost, and high quality, yet population aging and shifts in the care environment have left the system facing undervalued point values, fiscal pressure, wasted resources, and attrition among healthcare workers. Clinic-based and hospital-based western physicians see these frictions firsthand; prior research rarely organized nationwide open-ended recommendations on the NHI system as a whole. I therefore analyzed open-ended responses from 1,032 western physicians in the 2023 “Key Survey of Western Medicine Physicians per Ten Thousand Population in Our Country.”">台灣全民健康保險以高覆蓋率、低價格與高品質聞名，但隨人口高齡化與醫療環境轉變，健保仍面對點值偏低、財務壓力、醫療資源浪費，以及醫事人員流失等問題。基層西醫師與醫院西醫師站在第一線，最清楚制度落地時的摩擦；過去研究卻較少以開放式、非結構化方式，系統整理全國西醫師對整體健保制度的建議。因此，我以 2023 年「我國西醫師萬人關鍵調查報告」中 1,032 位西醫師的開放式回覆作為分析對象。</p>
+                <ul class="details">
+                    <li data-lang-zh="<strong>核心挑戰：</strong>開放式問卷累積大量非結構化文字，若只靠人工閱讀，難以在有限時間內兼顧涵蓋面與可比性。" data-lang-en="<strong>Core challenge:</strong> Open-ended surveys produce large volumes of unstructured text; manual reading alone struggles to balance coverage and comparability within limited time."><strong>核心挑戰：</strong>開放式問卷累積大量非結構化文字，若只靠人工閱讀，難以在有限時間內兼顧涵蓋面與可比性。</li>
+                    <li data-lang-zh="<strong>研究目標：</strong>建立「人工編碼為主、LLM 輔助為輔」的分析流程，整理基層西醫師與醫院西醫師的主要改善建議，並檢視不同人口學特徵下建議分布是否不同，供主管機關與醫界討論參考。" data-lang-en="<strong>Research goal:</strong> Build a workflow centered on human coding with LLM assistance, consolidate the main improvement recommendations from clinic-based and hospital-based western physicians, and test whether recommendation patterns differ across demographic traits—to inform discussion among authorities and the medical community."><strong>研究目標：</strong>建立「人工編碼為主、LLM 輔助為輔」的分析流程，整理基層西醫師與醫院西醫師的主要改善建議，並檢視不同人口學特徵下建議分布是否不同，供主管機關與醫界討論參考。</li>
+                </ul>
+            </section>
+
+            <!-- 02 執行方案 -->
+            <section id="stage2" class="timeline-card">
+                <h2 class="stage-title"><span data-lang-zh="執行方案" data-lang-en="Execution Approach">執行方案</span></h2>
+                <h3 class="stage-subtitle" data-lang-zh="1. 資料處理流程" data-lang-en="1. Data Processing Workflow">1. 資料處理流程</h3>
+                <p data-lang-zh="開放式文字整理 ➔ 三位研究人員提取單位（Unit） ➔ Fleiss' Kappa 一致性檢定與共識 ➔ 定義概念（Concept）並歸入範疇（Category） ➔ ChatGPT 3.5 提供第三方參考 ➔ SAS 9.4 描述統計與費雪精確檢定 ➔ Power BI 視覺化呈現" data-lang-en="Open-text preparation → Three researchers extract units → Fleiss’ Kappa and consensus → Define concepts and assign categories → ChatGPT 3.5 as third-party reference → SAS 9.4 descriptive stats and Fisher’s exact tests → Power BI visualization">開放式文字整理 ➔ 三位研究人員提取單位（Unit） ➔ Fleiss' Kappa 一致性檢定與共識 ➔ 定義概念（Concept）並歸入範疇（Category） ➔ ChatGPT 3.5 提供第三方參考 ➔ SAS 9.4 描述統計與費雪精確檢定 ➔ Power BI 視覺化呈現</p>
+                <aside class="supplement-box" aria-label="編碼層級補充說明">
+                    <p class="supplement-box__label" data-lang-zh="補充｜編碼層級" data-lang-en="Note | Coding levels">補充｜編碼層級</p>
+                    <ul class="supplement-box__list">
+                        <li data-lang-zh="<strong>單位（Unit）：</strong>從開放式回覆中抽出有意義的字句（排除贅述），是最小的分析片段。" data-lang-en="<strong>Unit:</strong> A meaningful phrase extracted from an open-ended response (filler removed)—the smallest analytic segment."><strong>單位（Unit）：</strong>從開放式回覆中抽出有意義的字句（排除贅述），是最小的分析片段。</li>
+                        <li data-lang-zh="<strong>概念（Concept）：</strong>對單位做描述性標記，以簡短文字概括該意見在說什麼（如「提高民眾負擔」）。" data-lang-en="<strong>Concept:</strong> A short descriptive label for a unit that summarizes what the comment is about (e.g., “increase patient cost-sharing”)."><strong>概念（Concept）：</strong>對單位做描述性標記，以簡短文字概括該意見在說什麼（如「提高民眾負擔」）。</li>
+                        <li data-lang-zh="<strong>範疇（Category）：</strong>將相近概念歸入較大主題（如「民眾責任與參與」），用於整體結構與統計檢定。" data-lang-en="<strong>Category:</strong> A broader theme that groups related concepts (e.g., “public responsibility and participation”), used for overall structure and statistical testing."><strong>範疇（Category）：</strong>將相近概念歸入較大主題（如「民眾責任與參與」），用於整體結構與統計檢定。</li>
+                    </ul>
+                </aside>
+                <h3 class="stage-subtitle" data-lang-zh="2. LLM 輔助編碼" data-lang-en="2. LLM-Assisted Coding">2. LLM 輔助編碼</h3>
+                <p data-lang-zh="編碼過程中，我以 <strong>ChatGPT 3.5</strong> 作為第三方輔助工具，請它針對單位內容提出可能的概念與歸類方向，再與另外兩位研究人員的判斷交叉比對。最終採用的概念與範疇，皆經三人共識確認；LLM 用來拓展視角、降低單一研究者盲點，而不是取代人工編碼。" data-lang-en="During coding, I used <strong>ChatGPT 3.5</strong> as a third-party aid—asking it to suggest possible concepts and category directions for each unit, then cross-checking those suggestions against the other two researchers’ judgments. Final concepts and categories were confirmed by three-person consensus. The LLM expanded perspective and reduced single-coder blind spots; it did not replace human coding.">編碼過程中，我以 <strong>ChatGPT 3.5</strong> 作為第三方輔助工具，請它針對單位內容提出可能的概念與歸類方向，再與另外兩位研究人員的判斷交叉比對。最終採用的概念與範疇，皆經三人共識確認；LLM 用來拓展視角、降低單一研究者盲點，而不是取代人工編碼。</p>
+
+                <h3 class="stage-subtitle" data-lang-zh="3. 質性編碼與量化檢定" data-lang-en="3. Qualitative Coding and Quantitative Testing">3. 質性編碼與量化檢定</h3>
+                <ul class="details">
+                    <li data-lang-zh="<strong>質性編碼：</strong>將開放式回覆匯入 NVivo 12，依「單位 → 概念 → 範疇」逐層整理。基層西醫師端歸納出 17 個範疇、313 個概念；醫院西醫師端歸納出 16 個範疇、222 個概念。後續依重要性原則，聚焦兩族群提及頻率約居前 30% 的主要改善建議概念。" data-lang-en="<strong>Qualitative coding:</strong> Open-ended responses were imported into NVivo 12 and organized as unit → concept → category. Clinic-based responses yielded 17 categories and 313 concepts; hospital-based responses yielded 16 categories and 222 concepts. Following the principle of importance, I focused on the top ~30% of most frequently mentioned improvement concepts in each group."><strong>質性編碼：</strong>將開放式回覆匯入 NVivo 12，依「單位 → 概念 → 範疇」逐層整理。基層西醫師端歸納出 17 個範疇、313 個概念；醫院西醫師端歸納出 16 個範疇、222 個概念。後續依重要性原則，聚焦兩族群提及頻率約居前 30% 的主要改善建議概念。</li>
+                    <li data-lang-zh="<strong>SAS 量化檢定：</strong>以 SAS 9.4 對「人口學特徵 × 改善建議範疇」進行費雪精確檢定，分別檢視基層西醫師與醫院西醫師內部，不同背景的建議分布是否具統計顯著差異。" data-lang-en="<strong>SAS quantitative testing:</strong> Using SAS 9.4, Fisher’s exact tests were run on demographic traits × recommendation categories—separately within clinic-based and hospital-based western physicians—to assess whether recommendation patterns differed significantly across backgrounds."><strong>SAS 量化檢定：</strong>以 SAS 9.4 對「人口學特徵 × 改善建議範疇」進行費雪精確檢定，分別檢視基層西醫師與醫院西醫師內部，不同背景的建議分布是否具統計顯著差異。</li>
+                </ul>
+            </section>
+
+            <!-- 03 風險控管與品質管理 -->
+            <section id="stage3" class="timeline-card">
+                <h2 class="stage-title"><span data-lang-zh="風險控管與品質管理" data-lang-en="Risk Control and Quality Management">風險控管與品質管理</span></h2>
+                <ul class="details">
+                    <li data-lang-zh="<strong>LLM 偏差控管：</strong>ChatGPT 對醫學用語與台灣健保用語的理解並不穩定。實務上，三位研究人員會先各自提取單位，再對 AI 建議的概念與範疇逐一核對；有疑義處以人工共識為準，避免純工具編碼。" data-lang-en="<strong>LLM bias control:</strong> ChatGPT’s grasp of medical terms and Taiwan NHI jargon is uneven. In practice, three researchers first extracted units independently, then reviewed AI-suggested concepts and categories one by one; disagreements were settled by human consensus to avoid tool-only coding."><strong>LLM 偏差控管：</strong>ChatGPT 對醫學用語與台灣健保用語的理解並不穩定。實務上，三位研究人員會先各自提取單位，再對 AI 建議的概念與範疇逐一核對；有疑義處以人工共識為準，避免純工具編碼。</li>
+                    <li data-lang-zh="<strong>編碼信度：</strong>單位層級以 Fleiss' Kappa 檢定三人一致性，各題 kappa 約介於 0.79–0.86，屬高度一致性；定稿前再經三人共識，降低個別解讀差異。" data-lang-en="<strong>Coding reliability:</strong> At the unit level, Fleiss’ Kappa across three coders ranged about 0.79–0.86, indicating substantial agreement. Final codes were locked only after three-person consensus to reduce idiosyncratic interpretation."><strong>編碼信度：</strong>單位層級以 Fleiss' Kappa 檢定三人一致性，各題 kappa 約介於 0.79–0.86，屬高度一致性；定稿前再經三人共識，降低個別解讀差異。</li>
+                    <li data-lang-zh="<strong>研究限制：</strong>問卷蒐集期約 76 天，無法涵蓋全體西醫師；電子問卷亦可能由助理代填。解讀時應把結果視為「全國樣本中的主要聲音」，而非全體西醫師的唯一結論。" data-lang-en="<strong>Study limitations:</strong> The survey window was about 76 days and could not cover all western physicians; e-surveys may also have been completed by assistants. Findings should be read as major voices within a national sample—not the sole conclusion of every western physician."><strong>研究限制：</strong>問卷蒐集期約 76 天，無法涵蓋全體西醫師；電子問卷亦可能由助理代填。解讀時應把結果視為「全國樣本中的主要聲音」，而非全體西醫師的唯一結論。</li>
+                </ul>
+                <aside class="supplement-box" aria-label="Kappa 一致性程度分級補充說明">
+                    <p class="supplement-box__label" data-lang-zh="補充｜Kappa 一致性程度分級" data-lang-en="Note | Kappa agreement levels">補充｜Kappa 一致性程度分級</p>
+                    <ul class="supplement-box__list">
+                        <li data-lang-zh="<strong>高度一致性：</strong>kappa &gt; 0.60" data-lang-en="<strong>Substantial agreement:</strong> kappa &gt; 0.60"><strong>高度一致性：</strong>kappa &gt; 0.60</li>
+                        <li data-lang-zh="<strong>中度一致性：</strong>0.41 ≤ kappa ≤ 0.60" data-lang-en="<strong>Moderate agreement:</strong> 0.41 ≤ kappa ≤ 0.60"><strong>中度一致性：</strong>0.41 ≤ kappa ≤ 0.60</li>
+                        <li data-lang-zh="<strong>低度一致性：</strong>kappa &lt; 0.41" data-lang-en="<strong>Low agreement:</strong> kappa &lt; 0.41"><strong>低度一致性：</strong>kappa &lt; 0.41</li>
+                    </ul>
+                </aside>
+            </section>
+
+            <!-- 04 核心數據洞察 -->
+            <section id="stage4" class="timeline-card">
+                <h2 class="stage-title"><span data-lang-zh="核心數據洞察" data-lang-en="Key Data Insights">核心數據洞察</span></h2>
+
+                <h3 class="stage-subtitle" data-lang-zh="1. 樣本結構與共通訴求" data-lang-en="1. Sample Structure and Shared Priorities">1. 樣本結構與共通訴求</h3>
+                <ul class="details">
+                    <li data-lang-zh="<strong>分析樣本：</strong>共 1,032 位西醫師（基層西醫師 669 位／64.8%；醫院西醫師 363 位／35.2%）。" data-lang-en="<strong>Analysis sample:</strong> 1,032 western physicians in total (clinic-based: 669 / 64.8%; hospital-based: 363 / 35.2%)."><strong>分析樣本：</strong>共 1,032 位西醫師（基層西醫師 669 位／64.8%；醫院西醫師 363 位／35.2%）。</li>
+                    <li data-lang-zh="<strong>核心共識：</strong>兩族群最常提出的概念皆是「提高民眾負擔」（基層西醫師 12.44%；醫院西醫師 14.47%），呼應合理的部分負擔有助抑制過度使用與資源浪費的討論方向。" data-lang-en="<strong>Shared priority:</strong> Both groups most often raised “increasing patient cost-sharing” (clinic-based 12.44%; hospital-based 14.47%), aligning with discussions that reasonable co-payments can curb overuse and waste."><strong>核心共識：</strong>兩族群最常提出的概念皆是「提高民眾負擔」（基層西醫師 12.44%；醫院西醫師 14.47%），呼應合理的部分負擔有助抑制過度使用與資源浪費的討論方向。</li>
+                </ul>
+
+                <div class="metrics-grid">
+                    <div class="metric-card">
+                        <div>
+                            <div class="metric-title" data-lang-zh="總分析樣本數" data-lang-en="Total Analysis Sample">總分析樣本數</div>
+                            <div class="metric-value">1,032 <span class="metric-sub" data-lang-zh="位" data-lang-en="physicians">位</span></div>
+                        </div>
+                        <div class="metric-icon"><i class="fa-solid fa-users" aria-hidden="true"></i></div>
+                    </div>
+                    <div class="metric-card metric-card--slate">
+                        <div>
+                            <div class="metric-title" data-lang-zh="基層西醫師樣本" data-lang-en="Clinic-based Western Physician Sample">基層西醫師樣本</div>
+                            <div class="metric-value">669 <span class="metric-sub">(64.8%)</span></div>
+                        </div>
+                        <div class="metric-icon metric-icon--slate"><i class="fa-solid fa-user-doctor" aria-hidden="true"></i></div>
+                    </div>
+                    <div class="metric-card metric-card--lavender">
+                        <div>
+                            <div class="metric-title" data-lang-zh="醫院西醫師樣本" data-lang-en="Hospital-based Western Physician Sample">醫院西醫師樣本</div>
+                            <div class="metric-value">363 <span class="metric-sub">(35.2%)</span></div>
+                        </div>
+                        <div class="metric-icon metric-icon--lavender"><i class="fa-solid fa-hospital-user" aria-hidden="true"></i></div>
+                    </div>
+                    <div class="metric-card metric-card--rose">
+                        <div>
+                            <div class="metric-title" data-lang-zh="共同首要概念" data-lang-en="Shared Top Concept">共同首要概念</div>
+                            <div class="metric-value" style="font-size: 1.1rem; line-height: 2rem;" data-lang-zh="提高民眾負擔" data-lang-en="Increase patient cost-sharing">提高民眾負擔</div>
+                        </div>
+                        <div class="metric-icon metric-icon--rose"><i class="fa-solid fa-hand-holding-dollar" aria-hidden="true"></i></div>
+                    </div>
+                </div>
+
+                <div class="chart-grid">
+                    <div class="chart-box-card">
+                        <div class="chart-box-header">
+                            <span data-lang-zh="基層西醫師 vs. 醫院西醫師：前 30% 主要改善建議概念 (%)" data-lang-en="Clinic-based vs. Hospital-based: Top 30% Improvement Concepts (%)">基層西醫師 vs. 醫院西醫師：前 30% 主要改善建議概念 (%)</span>
+                            <span class="chart-badge" data-lang-zh="重要性原則" data-lang-en="Principle of importance">重要性原則</span>
+                        </div>
+                        <div class="chart-container">
+                            <canvas id="comparisonChart"></canvas>
+                        </div>
+                    </div>
+                    <div class="chart-box-card">
+                        <div class="chart-box-header">
+                            <span data-lang-zh="西醫師樣本組成" data-lang-en="Western Physician Sample Composition">西醫師樣本組成</span>
+                        </div>
+                        <div class="chart-container" style="height: 240px;">
+                            <canvas id="ratioChart"></canvas>
+                        </div>
+                        <p class="chart-note">
+                            <i class="fa-solid fa-circle-info" aria-hidden="true"></i>
+                            <span data-lang-zh="占比取自論文依重要性原則公布的前 30% 主要概念；未列入該族群前 30% 者不以 0% 呈現。" data-lang-en="Shares are the top ~30% concepts published under the principle of importance; concepts outside a group’s top 30% are not shown as 0%.">占比取自論文依重要性原則公布的前 30% 主要概念；未列入該族群前 30% 者不以 0% 呈現。</span>
+                        </p>
+                    </div>
+                </div>
+
+                <h3 class="stage-subtitle" data-lang-zh="2. 兩族群主要概念的差異（依重要性原則）" data-lang-en="2. Differences in Top Concepts by Group (Principle of Importance)">2. 兩族群主要概念的差異（依重要性原則）</h3>
+                <ul class="details">
+                    <li data-lang-zh="<strong>基層西醫師前五概念：</strong>「提高民眾負擔」(12.44%)、「藥價合理化」(6.32%)、「落實分級轉診」(4.25%)、「取消總額」(3.99%)、「開放自費醫療」(3.11%)，合計 30.10%。其中「開放自費醫療」較常出現在基層西醫師端，反映基層西醫師在健保給付框架外尋求服務彈性的聲音。" data-lang-en="<strong>Clinic-based top five:</strong> “Increase patient cost-sharing” (12.44%), “rationalize drug pricing” (6.32%), “implement tiered referral” (4.25%), “abolish the global budget” (3.99%), and “open self-pay medical services” (3.11%), totaling 30.10%. “Open self-pay” appeared more often on the clinic-based side, reflecting calls for service flexibility beyond the NHI benefit frame."><strong>基層西醫師前五概念：</strong>「提高民眾負擔」(12.44%)、「藥價合理化」(6.32%)、「落實分級轉診」(4.25%)、「取消總額」(3.99%)、「開放自費醫療」(3.11%)，合計 30.10%。其中「開放自費醫療」較常出現在基層西醫師端，反映基層西醫師在健保給付框架外尋求服務彈性的聲音。</li>
+                    <li data-lang-zh="<strong>醫院西醫師前六概念：</strong>「提高民眾負擔」(14.47%)、「民眾先付費後理賠」(3.77%)、「藥價合理化」(3.67%)、「落實分級轉診」(3.47%)、「取消總額」(3.27%)、「強化雲端系統」(2.78%)，合計 31.42%。其中「民眾先付費後理賠」與「強化雲端系統」較常出現在醫院西醫師端，分別指向給付流程與資訊系統可近性。" data-lang-en="<strong>Hospital-based top six:</strong> “Increase patient cost-sharing” (14.47%), “patients pay first, then claim” (3.77%), “rationalize drug pricing” (3.67%), “implement tiered referral” (3.47%), “abolish the global budget” (3.27%), and “strengthen cloud systems” (2.78%), totaling 31.42%. “Pay first, then claim” and “strengthen cloud systems” appeared more often on the hospital-based side, pointing to payment workflows and information-system accessibility."><strong>醫院西醫師前六概念：</strong>「提高民眾負擔」(14.47%)、「民眾先付費後理賠」(3.77%)、「藥價合理化」(3.67%)、「落實分級轉診」(3.47%)、「取消總額」(3.27%)、「強化雲端系統」(2.78%)，合計 31.42%。其中「民眾先付費後理賠」與「強化雲端系統」較常出現在醫院西醫師端，分別指向給付流程與資訊系統可近性。</li>
+                    <li data-lang-zh="<strong>人口學差異：</strong>費雪精確檢定顯示，基層西醫師與醫院西醫師各自內部，不同性別、年齡、教育程度、職稱、科別與年資等特徵，在各改善建議範疇的分布多具顯著差異；這說明「誰在說話」會影響「說了什麼」，後續政策溝通不宜只看整體平均。" data-lang-en="<strong>Demographic differences:</strong> Fisher’s exact tests showed that, within each of the clinic-based and hospital-based groups, recommendation-category patterns often differed significantly by sex, age, education, title, specialty, and years in practice. Who speaks shapes what is said—policy communication should not rely on overall averages alone."><strong>人口學差異：</strong>費雪精確檢定顯示，基層西醫師與醫院西醫師各自內部，不同性別、年齡、教育程度、職稱、科別與年資等特徵，在各改善建議範疇的分布多具顯著差異；這說明「誰在說話」會影響「說了什麼」，後續政策溝通不宜只看整體平均。</li>
+                </ul>
+            </section>
+
+            <!-- 05 專案交付物與落地建議 -->
+            <section id="stage5" class="timeline-card">
+                <h2 class="stage-title"><span data-lang-zh="研究建議" data-lang-en="Research Recommendations">研究建議</span></h2>
+                <p class="stage-text" data-lang-zh="本研究產出決策分析報告，以及 Power BI 視覺化結果（矩陣式樹狀結構圖、文字雲、桑基圖）。論文本身建議政府與相關單位，優先就兩族群前 30% 主要概念與醫界討論並形成共識。以下三點是我依研究發現延伸的產品與政策討論方向，供作品集讀者對照，而非論文原文結論：" data-lang-en="This study produced a decision-oriented analysis report and Power BI visuals (treemap, word cloud, Sankey). The thesis itself advises government and related bodies to discuss the top ~30% concepts with the medical community first and build consensus. The three points below are my product- and policy-oriented extensions for portfolio readers—not verbatim thesis conclusions:">本研究產出決策分析報告，以及 Power BI 視覺化結果（矩陣式樹狀結構圖、文字雲、桑基圖）。論文本身建議政府與相關單位，優先就兩族群前 30% 主要概念與醫界討論並形成共識。以下三點是我依研究發現延伸的產品與政策討論方向，供作品集讀者對照，而非論文原文結論：</p>
+
+                <div class="recommendation-block">
+                    <h3 class="stage-subtitle" data-lang-zh="1. 政策與制度討論優先序（對應論文建議）" data-lang-en="1. Policy Discussion Priorities (Aligned with Thesis)">1. 政策與制度討論優先序（對應論文建議）</h3>
+                    <ul class="details">
+                        <li data-lang-zh="<strong>提高民眾負擔與先付後理賠：</strong>建議將「提高民眾負擔」列為優先溝通議題，並一併討論醫院西醫師提出的「民眾先付費後理賠」，在抑制過度使用與就醫可近性之間找平衡。" data-lang-en="<strong>Cost-sharing and pay-then-claim:</strong> Prioritize dialogue on “increasing patient cost-sharing,” and include the hospital-based idea of “patients pay first, then claim,” balancing overuse control with access to care."><strong>提高民眾負擔與先付後理賠：</strong>建議將「提高民眾負擔」列為優先溝通議題，並一併討論醫院西醫師提出的「民眾先付費後理賠」，在抑制過度使用與就醫可近性之間找平衡。</li>
+                        <li data-lang-zh="<strong>藥價合理化與總額制度：</strong>「藥價合理化」與「取消總額」同屬兩族群高頻概念，反映對藥品供給與點值報酬的長期不滿；政策討論宜同步處理給付價格與總額運作方式。" data-lang-en="<strong>Drug pricing and the global budget:</strong> “Rationalize drug pricing” and “abolish the global budget” were high-frequency in both groups, reflecting long-standing concerns about drug supply and point-value compensation; policy talks should address payment prices and global-budget design together."><strong>藥價合理化與總額制度：</strong>「藥價合理化」與「取消總額」同屬兩族群高頻概念，反映對藥品供給與點值報酬的長期不滿；政策討論宜同步處理給付價格與總額運作方式。</li>
+                    </ul>
+                </div>
+
+                <div class="recommendation-block">
+                    <h3 class="stage-subtitle" data-lang-zh="2. 醫療資訊與分級轉診（延伸）" data-lang-en="2. Health IT and Tiered Referral (Extension)">2. 醫療資訊與分級轉診（延伸）</h3>
+                    <ul class="details">
+                        <li data-lang-zh="<strong>強化雲端系統：</strong>對應醫院西醫師較常提出的「強化雲端系統」，可討論提升跨院病歷與檢查資訊的查詢穩定度與流程簡便性，減少重複檢驗與資訊落差。" data-lang-en="<strong>Strengthen cloud systems:</strong> Matching the hospital-based emphasis on “strengthen cloud systems,” discussion can focus on more stable, simpler cross-hospital record and imaging lookup—reducing duplicate tests and information gaps."><strong>強化雲端系統：</strong>對應醫院西醫師較常提出的「強化雲端系統」，可討論提升跨院病歷與檢查資訊的查詢穩定度與流程簡便性，減少重複檢驗與資訊落差。</li>
+                        <li data-lang-zh="<strong>落實分級轉診：</strong>兩族群皆將「落實分級轉診」列入主要概念。延伸上，可思考如何用誘因與數位轉診流程，讓基層西醫師與醫院西醫師的分工更清楚。" data-lang-en="<strong>Implement tiered referral:</strong> Both groups ranked “implement tiered referral” among top concepts. As an extension, incentives and digital referral workflows could clarify division of labor between clinic-based and hospital-based western physicians."><strong>落實分級轉診：</strong>兩族群皆將「落實分級轉診」列入主要概念。延伸上，可思考如何用誘因與數位轉診流程，讓基層西醫師與醫院西醫師的分工更清楚。</li>
+                    </ul>
+                </div>
+
+                <div class="recommendation-block">
+                    <h3 class="stage-subtitle" data-lang-zh="3. 開放自費醫療（延伸）" data-lang-en="3. Opening Self-Pay Services (Extension)">3. 開放自費醫療（延伸）</h3>
+                    <ul class="details">
+                        <li data-lang-zh="<strong>對應基層西醫師訴求：</strong>「開放自費醫療」主要出現在基層西醫師的前五概念。延伸討論可聚焦如何在合規前提下，讓基層西醫師更清楚自費與健保的界線，並評估預防醫學等高品質自費服務的可行性。" data-lang-en="<strong>Matching clinic-based voices:</strong> “Open self-pay medical services” ranked in the clinic-based top five. Extended discussion can clarify the self-pay vs. NHI boundary under compliance, and assess feasibility of higher-quality self-pay options such as preventive care."><strong>對應基層西醫師訴求：</strong>「開放自費醫療」主要出現在基層西醫師的前五概念。延伸討論可聚焦如何在合規前提下，讓基層西醫師更清楚自費與健保的界線，並評估預防醫學等高品質自費服務的可行性。</li>
+                    </ul>
+                </div>
+            </section>
+
+            <!-- 06 專案團隊與發表資訊 -->
+            <section id="team-info" class="timeline-card team-info-card">
+                <h2 class="stage-title">
+                    <span data-lang-zh="研究團隊與發表資訊" data-lang-en="Research Team and Publication Information">研究團隊與發表資訊</span>
+                </h2>
+                <dl class="team-info-list">
+                    <div class="team-info-row">
+                        <dt data-lang-zh="論文作者" data-lang-en="Thesis Author">論文作者</dt>
+                        <dd data-lang-zh="鄭書涵（國立臺北護理健康大學 健康事業管理研究所）" data-lang-en="Shu-Han Zheng (Graduate Institute of Health Business Administration, National Taipei University of Nursing and Health Sciences)">鄭書涵（國立臺北護理健康大學 健康事業管理研究所）</dd>
+                    </div>
+                    <div class="team-info-row">
+                        <dt data-lang-zh="指導教授" data-lang-en="Advisors">指導教授</dt>
+                        <dd data-lang-zh="李麗惠 博士、邱尚志 博士" data-lang-en="Dr. Li-Hui Lee, Dr. Shang-Jyh Chiou">李麗惠 博士、邱尚志 博士</dd>
+                    </div>
+                    <div class="team-info-row">
+                        <dt data-lang-zh="學術審定日期" data-lang-en="Academic Approval Date">學術審定日期</dt>
+                        <dd data-lang-zh="中華民國 112 年 8 月 (2023)" data-lang-en="August 2023 (R.O.C. Year 112)">中華民國 112 年 8 月 (2023)</dd>
+                    </div>
+                    <div class="team-info-row">
+                        <dt data-lang-zh="關鍵字" data-lang-en="Keywords">關鍵字</dt>
+                        <dd>
+                            <div class="tag-group tag-group--compact">
+                                <span class="tag" data-lang-zh="基層西醫師" data-lang-en="Clinic-based western physicians">基層西醫師</span>
+                                <span class="tag" data-lang-zh="醫院西醫師" data-lang-en="Hospital-based western physicians">醫院西醫師</span>
+                                <span class="tag" data-lang-zh="健保制度" data-lang-en="NHI System">健保制度</span>
+                                <span class="tag" data-lang-zh="內容分析" data-lang-en="Content Analysis">內容分析</span>
+                                <span class="tag">ChatGPT</span>
+                                <span class="tag" data-lang-zh="資料視覺化" data-lang-en="Data Visualization">資料視覺化</span>
+                            </div>
+                        </dd>
+                    </div>
+                </dl>
+            </section>
+        </article>
+    </main>
+
+    <footer>
+        <p>© 鄭書涵 Shu-Han Zheng | Personal Portfolio</p>
+    </footer>
+
+    <script src="js/common.js"></script>
+    <script src="js/paper.js"></script>
+    <script>
+        (function initProjectToc() {
+            const links = Array.from(document.querySelectorAll('.project-toc-label, .project-toc-item > a[href^="#"]'));
+            if (!links.length) return;
+
+            const sections = links
+                .map((link) => document.getElementById(link.getAttribute('href').slice(1)))
+                .filter(Boolean);
+
+            const setActive = (id) => {
+                links.forEach((link) => {
+                    link.classList.toggle('is-active', link.getAttribute('href') === `#${id}`);
+                });
+            };
+
+            const observer = new IntersectionObserver(
+                (entries) => {
+                    const visible = entries
+                        .filter((entry) => entry.isIntersecting)
+                        .sort((a, b) => b.intersectionRatio - a.intersectionRatio);
+                    if (visible[0]) setActive(visible[0].target.id);
+                },
+                { rootMargin: '-20% 0px -55% 0px', threshold: [0, 0.25, 0.5, 1] }
+            );
+
+            sections.forEach((section) => observer.observe(section));
+
+            const bindSmoothScroll = (anchor) => {
+                if (anchor.dataset.tocBound === '1') return;
+                anchor.dataset.tocBound = '1';
+                anchor.addEventListener('click', (e) => {
+                    const href = anchor.getAttribute('href');
+                    if (!href || href === '#') return;
+                    const target = document.getElementById(href.slice(1));
+                    if (!target) return;
+                    e.preventDefault();
+                    target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                });
+            };
+
+            links.forEach(bindSmoothScroll);
+
+            const syncSubtitles = () => {
+                document.querySelectorAll('.project-toc-list > .project-toc-item').forEach((item) => {
+                    const link = item.querySelector(':scope > a[href^="#"]');
+                    if (!link) return;
+
+                    const section = document.getElementById(link.getAttribute('href').slice(1));
+                    const subtitleEls = section
+                        ? Array.from(section.querySelectorAll('.stage-subtitle'))
+                        : [];
+
+                    let wrap = item.querySelector(':scope > .project-toc-subs-wrap');
+                    if (!subtitleEls.length) {
+                        if (wrap) wrap.remove();
+                        return;
+                    }
+
+                    if (!wrap) {
+                        wrap = document.createElement('div');
+                        wrap.className = 'project-toc-subs-wrap';
+                        const list = document.createElement('ul');
+                        list.className = 'project-toc-subs';
+                        wrap.appendChild(list);
+                        item.appendChild(wrap);
+                    }
+
+                    const list = wrap.querySelector('.project-toc-subs');
+                    list.replaceChildren(
+                        ...subtitleEls.map((el, index) => {
+                            if (!el.id) el.id = `${section.id}-sub-${index + 1}`;
+                            const li = document.createElement('li');
+                            const subLink = document.createElement('a');
+                            subLink.href = `#${el.id}`;
+                            subLink.textContent = el.textContent.trim();
+                            bindSmoothScroll(subLink);
+                            li.appendChild(subLink);
+                            return li;
+                        })
+                    );
+                });
+            };
+
+            syncSubtitles();
+            document.addEventListener('langchange', syncSubtitles);
+        })();
+    </script>
+</body>
+</html>

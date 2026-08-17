@@ -1,0 +1,1176 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Airbnb 房源品質與評論洞察 — 以臺灣（臺北市）Inside Airbnb 公開資料為例，用 SQL／pandas／spaCy／Power BI 釐清哪裡差、差在什麼、先改什麼">
+    <title>airbnb 房源品質與評論洞察 | 鄭書涵 Portfolio</title>
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="css/variables.css">
+    <link rel="stylesheet" href="css/base.css">
+    <link rel="stylesheet" href="css/components.css">
+    <link rel="stylesheet" href="css/project.css">
+
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@type": "CreativeWork",
+        "name": "airbnb 房源品質與評論洞察",
+        "author": { "@type": "Person", "name": "鄭書涵 Shu-Han Zheng" },
+        "description": "以臺灣（臺北市）Inside Airbnb 公開資料為例，用 SQL／pandas／spaCy／Power BI 釐清哪裡差、差在什麼、先改什麼，產出可驗證的改善優先順序",
+        "keywords": ["Python", "pandas", "DuckDB", "SQL", "spaCy", "Power BI", "Text Mining", "Data Cleaning", "Product Quality Metrics"]
+    }
+    </script>
+
+    <style>
+        .subsection-title {
+            margin: 1.4rem 0 0.7rem 0;
+            font-size: 1.05rem;
+            font-weight: 700;
+            color: var(--text-level-2);
+        }
+        .table-scroll {
+            width: 100%;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+            margin: 0.5rem 0 1rem 0;
+        }
+        .poc-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 0.4rem 0 1.2rem 0;
+            font-size: 0.88rem;
+            min-width: 560px;
+        }
+        .poc-table th,
+        .poc-table td {
+            padding: 0.75rem 0.9rem;
+            border: 1px solid var(--border-color);
+            vertical-align: top;
+            line-height: 1.65;
+        }
+        .poc-table th {
+            background: var(--surface-soft);
+            color: var(--text-level-2);
+            font-weight: 700;
+            font-size: 0.85rem;
+            text-align: center;
+            vertical-align: middle;
+        }
+        .poc-table td {
+            color: var(--text-level-4);
+            text-align: justify;
+            text-justify: inter-ideograph;
+        }
+        .poc-table td strong,
+        .poc-table th strong {
+            color: var(--text-level-3);
+        }
+        .poc-table .cell-list {
+            margin: 0.4rem 0 0.55rem 0;
+            padding-left: 1.4em;
+            text-align: left;
+        }
+        .poc-table .cell-list li {
+            margin-bottom: 0.4rem;
+        }
+        .poc-table .cell-list li:last-child {
+            margin-bottom: 0;
+        }
+        .poc-table--definitions th:first-child,
+        .poc-table--definitions td:first-child {
+            width: 5rem;
+            white-space: nowrap;
+            text-align: center;
+            vertical-align: middle;
+        }
+        .poc-table--metrics th:first-child,
+        .poc-table--metrics td:first-child {
+            width: 15%;
+        }
+        .poc-table--equal {
+            table-layout: fixed;
+        }
+        .poc-table--equal th,
+        .poc-table--equal td {
+            width: 50%;
+        }
+        .poc-table--scope th:first-child,
+        .poc-table--scope td:first-child {
+            width: 7rem;
+            white-space: nowrap;
+            text-align: center;
+            vertical-align: middle;
+        }
+        .poc-table--recommend {
+            table-layout: fixed;
+        }
+        .poc-table--recommend th:first-child,
+        .poc-table--recommend td:first-child {
+            width: 3.6rem;
+            text-align: center;
+            vertical-align: middle;
+            white-space: nowrap;
+        }
+        .poc-table--recommend th:nth-child(2) {
+            width: 22%;
+        }
+        .poc-table--recommend td:nth-child(2) {
+            width: 22%;
+            white-space: normal;
+            overflow-wrap: anywhere;
+            word-break: break-word;
+            text-align: left;
+            vertical-align: middle;
+        }
+        .poc-table--recommend th:nth-child(3),
+        .poc-table--recommend td:nth-child(3) {
+            width: calc(100% - 3.6rem - 22%);
+        }
+        .poc-table--segments th:nth-child(2),
+        .poc-table--segments td:nth-child(2),
+        .poc-table--segments th:nth-child(3),
+        .poc-table--segments td:nth-child(3),
+        .poc-table--segments th:nth-child(6),
+        .poc-table--segments td:nth-child(6) {
+            padding-left: calc(0.9rem + 0.75em);
+            padding-right: calc(0.9rem + 0.75em);
+            white-space: nowrap;
+        }
+        .poc-table--crosstab th:nth-child(2),
+        .poc-table--crosstab td:nth-child(2),
+        .poc-table--crosstab th:nth-child(3),
+        .poc-table--crosstab td:nth-child(3) {
+            padding-left: calc(0.9rem + 0.75em);
+            padding-right: calc(0.9rem + 0.75em);
+            white-space: nowrap;
+        }
+        .poc-table--crosstab th:nth-child(4),
+        .poc-table--crosstab td:nth-child(4) {
+            padding-left: calc(0.9rem + 1.25em);
+            padding-right: calc(0.9rem + 1.25em);
+            white-space: nowrap;
+        }
+        .poc-table .num {
+            text-align: right;
+            font-variant-numeric: tabular-nums;
+            white-space: nowrap;
+        }
+        .poc-table .center {
+            text-align: center;
+            vertical-align: middle;
+        }
+        .poc-table--pending td {
+            text-align: center;
+            vertical-align: middle;
+        }
+        .poc-table--pending th:first-child,
+        .poc-table--pending td:first-child {
+            text-align: left;
+        }
+        .pending-cell {
+            color: var(--text-muted);
+            font-style: italic;
+            font-size: 0.85rem;
+        }
+        .pending-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.35rem;
+            background: var(--surface-soft);
+            border: 1px solid var(--border-color);
+            color: var(--text-muted);
+            font-size: 0.78rem;
+            font-weight: 600;
+            padding: 0.2rem 0.65rem;
+            border-radius: 12px;
+            margin-left: 0.6rem;
+            vertical-align: middle;
+        }
+        .pending-banner {
+            background: var(--surface-soft);
+            border: 1px dashed var(--border-color);
+            border-radius: 8px;
+            padding: 0.9rem 1.1rem;
+            font-size: 0.88rem;
+            color: var(--text-muted);
+            line-height: 1.65;
+            margin: 0 0 1.2rem 0;
+            display: flex;
+            align-items: flex-start;
+            gap: 0.6rem;
+            text-align: justify;
+            text-justify: inter-ideograph;
+        }
+        .pending-banner i {
+            color: var(--accent-color);
+            margin-top: 0.15rem;
+        }
+        .note-box {
+            background: var(--surface-soft);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 0.95rem 1.1rem;
+            font-size: 0.88rem;
+            color: var(--text-muted);
+            line-height: 1.65;
+            margin: 1rem 0;
+            text-align: justify;
+            text-justify: inter-ideograph;
+        }
+        .note-box > strong:first-child {
+            display: block;
+            color: var(--text-level-2);
+            margin-bottom: 0.55rem;
+        }
+        .note-box ul.details {
+            margin: 0;
+            color: var(--text-muted);
+        }
+        .note-box ul.details li:last-child { margin-bottom: 0; }
+        .decision-box {
+            background: var(--accent-light);
+            border-left: 4px solid var(--accent-color);
+            border-radius: 8px;
+            padding: 1.1rem 1.25rem;
+            margin: 1rem 0;
+        }
+        .decision-box p {
+            margin: 0 0 0.6rem 0;
+            color: var(--text-level-4);
+            line-height: 1.75;
+            text-align: justify;
+            text-justify: inter-ideograph;
+        }
+        .decision-box p:last-child { margin-bottom: 0; }
+        .decision-box strong { color: var(--text-level-2); }
+        .hero-actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.75rem;
+            margin-top: 1.2rem;
+        }
+        .pbi-embed {
+            position: relative;
+            width: 100%;
+            aspect-ratio: 16 / 10;
+            min-height: 22rem;
+            margin: 0.5rem 0 1.2rem 0;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            overflow: hidden;
+            background: var(--surface-soft);
+        }
+        .pbi-embed iframe {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            border: 0;
+        }
+        @media (max-width: 768px) {
+            .poc-table { font-size: 0.8rem; }
+            .poc-table th, .poc-table td { padding: 0.55rem 0.6rem; }
+            .pbi-embed { min-height: 16rem; }
+        }
+
+        /* 左側大綱：三欄置中，文章在正中，大綱貼在文章左側 */
+        .container--with-toc {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) minmax(0, 960px) minmax(0, 1fr);
+            column-gap: 1.75rem;
+            width: 100%;
+            max-width: none;
+            margin-left: auto;
+            margin-right: auto;
+            padding-left: 1rem;
+            padding-right: 1rem;
+            box-sizing: border-box;
+            align-items: start;
+        }
+        .container--with-toc > .project-toc {
+            grid-column: 1;
+            justify-self: end;
+            width: 100%;
+            max-width: 20rem;
+            position: sticky;
+            top: 5.5rem;
+            max-height: calc(100vh - 6.5rem);
+            overflow-y: auto;
+            padding: 0.85rem 0;
+            text-align: left;
+        }
+        .container--with-toc > article {
+            grid-column: 2;
+            min-width: 0;
+            width: 100%;
+        }
+        .project-toc-label {
+            display: block;
+            margin: 0 0 0.85rem 0;
+            padding: 0;
+            font-size: 0.88rem;
+            font-weight: 800;
+            line-height: 1.35;
+            letter-spacing: 0;
+            text-transform: none;
+            text-align: left;
+            color: var(--text-level-1);
+            text-decoration: none;
+            transition: color 0.2s ease;
+        }
+        .project-toc-label:hover,
+        .project-toc-label.is-active {
+            color: var(--accent-color);
+        }
+        .project-toc-list {
+            list-style: none;
+            margin: 0;
+            padding: 0;
+            text-align: left;
+        }
+        .project-toc-list .project-toc-item > a {
+            display: block;
+            padding: 0.45rem 0;
+            border-left: none;
+            color: var(--text-level-4);
+            text-decoration: none;
+            text-align: left;
+            font-size: 0.95rem;
+            line-height: 1.4;
+            transition: color 0.2s ease;
+        }
+        .project-toc-list .project-toc-item > a:hover {
+            color: var(--accent-color);
+            background: transparent;
+        }
+        .project-toc-list .project-toc-item > a.is-active {
+            color: var(--accent-color);
+            font-weight: 600;
+            background: transparent;
+        }
+        .project-toc-item {
+            margin: 0;
+        }
+        .project-toc-subs-wrap {
+            display: grid;
+            grid-template-rows: 0fr;
+            transition: grid-template-rows 0.28s ease;
+        }
+        .project-toc-item:hover .project-toc-subs-wrap,
+        .project-toc-item:focus-within .project-toc-subs-wrap {
+            grid-template-rows: 1fr;
+        }
+        .project-toc-subs {
+            list-style: none;
+            margin: 0;
+            padding: 0 0 0 0.75rem;
+            overflow: hidden;
+            min-height: 0;
+        }
+        .project-toc-subs li {
+            padding: 0;
+        }
+        .project-toc-subs a {
+            display: block;
+            padding: 0.2rem 0;
+            font-size: 0.82rem;
+            line-height: 1.4;
+            color: var(--text-muted);
+            text-decoration: none;
+            transition: color 0.2s ease;
+        }
+        .project-toc-item:hover .project-toc-subs a,
+        .project-toc-item:focus-within .project-toc-subs a {
+            color: var(--text-level-4);
+        }
+        .project-toc-subs a:hover {
+            color: var(--accent-color);
+        }
+        @media (max-width: 1200px) {
+            .container--with-toc {
+                grid-template-columns: 1fr;
+                max-width: 960px;
+                margin-left: auto;
+                margin-right: auto;
+                column-gap: 0;
+            }
+            .container--with-toc > .project-toc,
+            .container--with-toc > article {
+                grid-column: 1;
+                justify-self: stretch;
+                max-width: none;
+            }
+            .container--with-toc > .project-toc {
+                position: static;
+                max-height: none;
+                overflow: visible;
+                margin-bottom: 0.5rem;
+                padding: 0.75rem 0 0.85rem;
+                border-bottom: 1px solid var(--border-color);
+            }
+            .project-toc-list .project-toc-item > a {
+                font-size: 0.95rem;
+            }
+            .project-toc-label {
+                font-size: 0.88rem;
+            }
+        }
+        .workflow-step-text {
+            text-align: justify;
+            text-justify: inter-ideograph;
+        }
+    </style>
+</head>
+<body>
+
+    <header class="header--with-logo">
+        <a href="index.html" class="header-logo">鄭書涵 Shu-Han Zheng</a>
+        <nav class="nav-links" aria-label="主要導覽">
+            <button id="lang-toggle-btn" class="btn-lang" type="button">
+                <i class="fa-solid fa-globe" aria-hidden="true"></i>
+                <span id="lang-text">中文</span>
+            </button>
+        </nav>
+    </header>
+
+    <main class="container container--project container--with-toc">
+        <nav class="project-toc" aria-label="頁面大綱">
+            <a href="#hero" class="project-toc-label" data-lang-zh="airbnb 房源品質與評論洞察" data-lang-en="Airbnb Listing Quality &amp; Review Insights">airbnb 房源品質與評論洞察</a>
+            <ul class="project-toc-list">
+                <li class="project-toc-item"><a href="#problem" data-lang-zh="問題定義" data-lang-en="Problem Definition">問題定義</a></li>
+                <li class="project-toc-item"><a href="#metrics" data-lang-zh="指標定義" data-lang-en="Metric Definitions">指標定義</a></li>
+                <li class="project-toc-item"><a href="#method" data-lang-zh="資料與方法" data-lang-en="Data &amp; Methods">資料與方法</a></li>
+                <li class="project-toc-item"><a href="#dashboard" data-lang-zh="Power BI 儀表板" data-lang-en="Power BI Dashboard">Power BI 儀表板</a></li>
+                <li class="project-toc-item"><a href="#findings" data-lang-zh="關鍵發現" data-lang-en="Key Findings">關鍵發現</a></li>
+                <li class="project-toc-item"><a href="#recommend" data-lang-zh="產品建議與限制" data-lang-en="Recommendations &amp; Limitations">產品建議與限制</a></li>
+            </ul>
+        </nav>
+        <article>
+            <section id="hero" class="hero-project" aria-labelledby="airbnb-title">
+                <p class="hero-project-brand" data-lang-zh="資料分析 × 文字探勘" data-lang-en="Data Analysis × Text Mining">資料分析 × 文字探勘</p>
+                <h1 id="airbnb-title" data-lang-zh="airbnb 房源品質與評論洞察" data-lang-en="Airbnb Listing Quality &amp; Review Insights">airbnb 房源品質與評論洞察</h1>
+                <p data-lang-zh="同一城市內，房源在不同行政區、價格帶、住宿類型上的品質表現並不一致。打開資料雖能看到評分與評論，但未經分群對照與主題歸納前，仍不容易一次看清哪裡差、差在什麼、該先改什麼。" data-lang-en="Within the same city, listing quality is not consistent across districts, price bands, and stay categories. Ratings and reviews are visible in the data, but without segment comparison and theme summary it is still hard to see, at a glance, where quality is weak, what is driving it, and what to fix first.">同一城市內，房源在不同行政區、價格帶、住宿類型上的品質表現並不一致。打開資料雖能看到評分與評論，但未經分群對照與主題歸納前，仍不容易一次看清哪裡差、差在什麼、該先改什麼。</p>
+                <p data-lang-zh="本專案以臺灣（臺北市）為例，使用 Inside Airbnb 公開資料，應用 DuckDB／pandas (Python) 計算可重現的品質指標、spaCy (Python) 抽取評論主題，並以 Power BI 呈現品質指標、分群落差與評論主題，再分析評分與評論內容，給出改善優先順序。" data-lang-en="Taking Taipei, Taiwan as the case, this project uses public Inside Airbnb data. DuckDB / pandas (Python) compute reproducible quality metrics, spaCy (Python) extracts review themes, and Power BI presents quality metrics, segment gaps, and review themes. Ratings and review text are then analyzed to produce an improvement priority.">本專案以臺灣（臺北市）為例，使用 Inside Airbnb 公開資料，應用 DuckDB／pandas (Python) 計算可重現的品質指標、spaCy (Python) 抽取評論主題，並以 Power BI 呈現品質指標、分群落差與評論主題，再分析評分與評論內容，給出改善優先順序。</p>
+                <div class="tag-group">
+                    <span class="tag">Python</span>
+                    <span class="tag">SQL</span>
+                    <span class="tag">Power BI</span>
+                    <span class="tag">pandas</span>
+                    <span class="tag">spaCy</span>
+                    <span class="tag">DuckDB</span>
+                </div>
+                <div class="hero-actions">
+                    <a class="btn-toggle-auto" href="https://github.com/dearsloth/airbnb-quality-diagnostic" target="_blank" rel="noopener noreferrer">
+                        <i class="fa-brands fa-github" aria-hidden="true"></i>
+                        <span data-lang-zh="查看程式碼（GitHub）" data-lang-en="View code (GitHub)">查看程式碼（GitHub）</span>
+                    </a>
+                </div>
+            </section>
+
+            <!-- 01 問題定義 -->
+            <section id="problem" class="timeline-card">
+                <h2 class="stage-title"><span data-lang-zh="問題定義" data-lang-en="Problem Definition">問題定義</span></h2>
+                <ul class="details">
+                    <li data-lang-zh="<strong>問題：</strong>各房源的評分與評論雖可見，但缺少品質指標與主題分類，無法有效判斷哪裡差、差在什麼、先改什麼。" data-lang-en="<strong>Problem:</strong> Ratings and reviews are visible for each listing, but without quality metrics and theme categories it is hard to judge where quality is weak, what is driving it, and what to fix first."><strong>問題：</strong>各房源的評分與評論雖可見，但缺少品質指標與主題分類，無法有效判斷哪裡差、差在什麼、先改什麼。</li>
+                    <li data-lang-zh="<strong>目標：</strong>找出評分偏弱的行政區／價格帶／住宿類型、歸納評論的主要主題，並排出 2～3 個該先改善的重點與驗證方式。" data-lang-en="<strong>Goal:</strong> Identify districts, price bands, and stay categories with weaker ratings, summarize the main review themes, and rank 2–3 improvement priorities with a way to validate them."><strong>目標：</strong>找出評分偏弱的行政區／價格帶／住宿類型、歸納評論的主要主題，並排出 2～3 個該先改善的重點與驗證方式。</li>
+                </ul>
+
+                <h3 class="subsection-title" data-lang-zh="成功標準" data-lang-en="Success Criteria">成功標準</h3>
+                <ul class="details">
+                    <li data-lang-zh="<strong>分群品質對比：</strong>產出臺北市品質指標彙總表，並比較行政區／價格帶／住宿類型，標出品質明顯偏低的分群。" data-lang-en="<strong>Segment quality comparison:</strong> Produce a Taipei quality-metrics summary, compare districts / price bands / stay categories, and flag clearly underperforming segments."><strong>分群品質對比：</strong>產出臺北市品質指標彙總表，並比較行政區／價格帶／住宿類型，標出品質明顯偏低的分群。</li>
+                    <li data-lang-zh="<strong>評論主題歸納：</strong>以 spaCy 產出評論主題頻次表（如清潔、噪音等），並附上分析規則。" data-lang-en="<strong>Review theme summary:</strong> Produce a spaCy review-theme frequency table (e.g. cleanliness, noise) and document the analysis rules."><strong>評論主題歸納：</strong>以 spaCy 產出評論主題頻次表（如清潔、噪音等），並附上分析規則。</li>
+                    <li data-lang-zh="<strong>改善優先順序：</strong>提出 2～3 個該先改善的重點（例如某價格帶的噪音問題），並說明假設與如何驗證。" data-lang-en="<strong>Improvement priority:</strong> Propose 2–3 priorities to fix first (e.g. noise in a given price band), with the assumption and a way to validate it."><strong>改善優先順序：</strong>提出 2～3 個該先改善的重點（例如某價格帶的噪音問題），並說明假設與如何驗證。</li>
+                    <li data-lang-zh="<strong>分析可重現性：</strong>產出至少 2～3 條可重跑的 SQL 查詢，以及可重跑的 pandas／spaCy 分析程式碼。" data-lang-en="<strong>Reproducibility:</strong> Produce at least 2–3 SQL queries that can be re-run, plus pandas / spaCy analysis code that can be re-run."><strong>分析可重現性：</strong>產出至少 2～3 條可重跑的 SQL 查詢，以及可重跑的 pandas／spaCy 分析程式碼。</li>
+                </ul>
+
+                <h3 class="subsection-title" data-lang-zh="範圍界定" data-lang-en="Scope">範圍界定</h3>
+                <p class="stage-text" data-lang-zh="以下用範圍內／範圍外標示本專案交付邊界，範圍內聚焦能回答「哪裡差、差在什麼、先改什麼」的分析與呈現；範圍外則留給後續專案或需額外實驗才能驗證的工作。" data-lang-en="The in-scope / out-of-scope table below marks this project’s delivery boundary. In-scope work focuses on analysis and presentation that can answer where quality is weak, what is driving it, and what to fix first. Out-of-scope items are left for later projects, or for work that needs additional experiments to validate.">以下用範圍內／範圍外標示本專案交付邊界，範圍內聚焦能回答「哪裡差、差在什麼、先改什麼」的分析與呈現；範圍外則留給後續專案或需額外實驗才能驗證的工作。</p>
+                <div class="table-scroll">
+                    <table class="poc-table poc-table--scope">
+                        <thead>
+                            <tr>
+                                <th data-lang-zh="範圍" data-lang-en="Scope">範圍</th>
+                                <th data-lang-zh="內容" data-lang-en="Content">內容</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><strong data-lang-zh="範圍內" data-lang-en="In scope">範圍內</strong></td>
+                                <td data-lang-zh="資料清洗與整合、SQL／pandas 彙總查詢與交叉核對、品質指標定義、行政區／價格帶／住宿類型分群比較、spaCy 評論主題抽取、Power BI 呈現、產品建議" data-lang-en="Data cleaning and integration; SQL / pandas summary queries with a cross-check; quality-metric definitions; district / price-band / stay-category comparison; spaCy review-theme extraction; Power BI presentation; product recommendations">資料清洗與整合、SQL／pandas 彙總查詢與交叉核對、品質指標定義、行政區／價格帶／住宿類型分群比較、spaCy 評論主題抽取、Power BI 呈現、產品建議</td>
+                            </tr>
+                            <tr>
+                                <td><strong data-lang-zh="範圍外" data-lang-en="Out of scope">範圍外</strong></td>
+                                <td data-lang-zh="定價或推薦模型、即時資料擷取、跨城市比較、A/B 測試設計與執行、因果推論" data-lang-en="Pricing or recommendation models; real-time data collection; cross-city comparison; A/B test design or execution; causal inference">定價或推薦模型、即時資料擷取、跨城市比較、A/B 測試設計與執行、因果推論</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- 02 指標定義 -->
+            <section id="metrics" class="timeline-card">
+                <h2 class="stage-title"><span data-lang-zh="指標定義" data-lang-en="Metric Definitions">指標定義</span></h2>
+                <p class="stage-text" data-lang-zh="除非特別標示，品質指標欄位皆來自 <code>listings</code> 表；評論文字與主題指標來自 <code>reviews</code> 表。" data-lang-en="Unless noted otherwise, quality-metric fields come from the <code>listings</code> table; review text and theme metrics come from the <code>reviews</code> table.">除非特別標示，品質指標欄位皆來自 <code>listings</code> 表；評論文字與主題指標來自 <code>reviews</code> 表。</p>
+
+                <h3 class="subsection-title" data-lang-zh="分析單位" data-lang-en="Unit of analysis">分析單位</h3>
+                <div class="table-scroll">
+                    <table class="poc-table poc-table--definitions">
+                        <thead>
+                            <tr>
+                                <th data-lang-zh="單位" data-lang-en="Unit">單位</th>
+                                <th data-lang-zh="對應欄位" data-lang-en="Source field">對應欄位</th>
+                                <th data-lang-zh="定義" data-lang-en="Definition">定義</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td data-lang-zh="房源" data-lang-en="Listing"><strong>房源</strong></td>
+                                <td ><code>listings.id</code></td>
+                                <td data-lang-zh="一列代表一筆房源。品質指標與分群比較都以房源為單位計算。" data-lang-en="One row is one listing. Quality metrics and segment comparisons are calculated per listing.">一列代表一筆房源。品質指標與分群比較都以房源為單位計算。</td>
+                            </tr>
+                            <tr>
+                                <td data-lang-zh="評論" data-lang-en="Review"><strong>評論</strong></td>
+                                <td><code>reviews.id</code></td>
+                                <td data-lang-zh="一列代表一則評論。主題抽取與主題占比都以單則評論為單位計算。" data-lang-en="One row is one review. Theme extraction and theme share are calculated per review.">一列代表一則評論。主題抽取與主題占比都以單則評論為單位計算。</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <h3 class="subsection-title" data-lang-zh="分群維度" data-lang-en="Segmentation dimensions">分群維度</h3>
+                <div class="table-scroll">
+                    <table class="poc-table poc-table--metrics">
+                        <thead>
+                            <tr>
+                                <th data-lang-zh="維度" data-lang-en="Dimension">維度</th>
+                                <th data-lang-zh="對應欄位" data-lang-en="Source field">對應欄位</th>
+                                <th data-lang-zh="定義" data-lang-en="Definition">定義</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td data-lang-zh="行政區" data-lang-en="District">行政區</td>
+                                <td><code>listings.neighbourhood_cleansed</code></td>
+                                <td data-lang-zh="以清洗後的臺北市行政區切分（如大安區、中山區）。不用原始 <code>neighbourhood</code>，因其為較細、命名不一致的區域名。" data-lang-en="Split by cleaned Taipei administrative district (e.g. Da’an, Zhongshan). The raw <code>neighbourhood</code> field is not used: it is finer-grained and named inconsistently.">以清洗後的臺北市行政區切分（如大安區、中山區）。不用原始 <code>neighbourhood</code>，因其為較細、命名不一致的區域名。</td>
+                            </tr>
+                            <tr>
+                                <td data-lang-zh="價格帶" data-lang-en="Price band">價格帶</td>
+                                <td><code>listings.price</code></td>
+                                <td data-lang-zh="每晚價格轉成數值後分成四區間：≤1500、1501–2500、2501–4000、&gt;4000。缺值標為 Unknown，不列入改善重點。" data-lang-en="Nightly price is converted to numeric, then binned into ≤1500, 1501–2500, 2501–4000, and &gt;4000. Missing values are labeled Unknown and excluded from improvement priorities.">每晚價格轉成數值後分成四區間：≤1500、1501–2500、2501–4000、&gt;4000。缺值標為 Unknown，不列入改善重點。</td>
+                            </tr>
+                            <tr>
+                                <td data-lang-zh="住宿類型" data-lang-en="Stay category">住宿類型</td>
+                                <td><code>listings.property_type</code> + <code>listings.room_type</code></td>
+                                <td data-lang-zh="由房源類型（如 hotel、apartment）與房間類型（如 entire home、private room）歸類成四類。同一房源若符合多類，依合宿類 → 飯店類 → 民宿類 → 住宅類取第一個命中。" data-lang-en="Mapped from property type (e.g. hotel, apartment) and room type (e.g. entire home, private room) into four categories. If a listing matches more than one, the first hit in this order is used: shared-stay → hotel → B&amp;B → residential.">由房源類型（如 hotel、apartment）與房間類型（如 entire home、private room）歸類成四類。同一房源若符合多類，依合宿類 → 飯店類 → 民宿類 → 住宅類取第一個命中。</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <h3 class="subsection-title" data-lang-zh="房源品質指標" data-lang-en="Listing quality metrics">房源品質指標</h3>
+                <div class="table-scroll">
+                    <table class="poc-table poc-table--metrics">
+                        <thead>
+                            <tr>
+                                <th data-lang-zh="指標" data-lang-en="Metric">指標</th>
+                                <th data-lang-zh="計算方式（對應欄位）" data-lang-en="How it is calculated (fields)">計算方式（對應欄位）</th>
+                                <th data-lang-zh="產品意義" data-lang-en="Why it matters">產品意義</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td data-lang-zh="有評論率" data-lang-en="Review coverage">有評論率</td>
+                                <td data-lang-zh="<code>listings.number_of_reviews</code>（該房源累計評論則數）≥ 1 的房源數 ÷ 全部房源數" data-lang-en="Number of listings where <code>listings.number_of_reviews</code> (lifetime review count) ≥ 1, divided by all listings"><code>listings.number_of_reviews</code>（該房源累計評論則數）≥ 1 的房源數 ÷ 全部房源數</td>
+                                <td data-lang-zh="有多少房源曾留下可驗證的住宿回饋。無評論者不應直接解讀為品質差。" data-lang-en="Share of listings with a verifiable stay record. No reviews should not be read as poor quality.">有多少房源曾留下可驗證的住宿回饋。無評論者不應直接解讀為品質差。</td>
+                            </tr>
+                            <tr>
+                                <td data-lang-zh="近一年活躍率" data-lang-en="12-month activity rate">近一年活躍率</td>
+                                <td data-lang-zh="<code>listings.number_of_reviews_ltm</code>（近 12 個月評論則數）≥ 1 的房源數 ÷ 全部房源數" data-lang-en="Number of listings where <code>listings.number_of_reviews_ltm</code> (reviews in the last 12 months) ≥ 1, divided by all listings"><code>listings.number_of_reviews_ltm</code>（近 12 個月評論則數）≥ 1 的房源數 ÷ 全部房源數</td>
+                                <td data-lang-zh="有多少房源近一年仍有入住。用來區分「曾經營運」與「目前仍活躍」。" data-lang-en="Share of listings with a stay in the last 12 months. Distinguishes listings that once operated from those still active.">有多少房源近一年仍有入住。用來區分「曾經營運」與「目前仍活躍」。</td>
+                            </tr>
+                            <tr>
+                                <td data-lang-zh="均分" data-lang-en="Average rating">均分</td>
+                                <td data-lang-zh="<code>listings.review_scores_rating</code>（整體評分）非空的房源，取其平均值" data-lang-en="Mean of <code>listings.review_scores_rating</code> (overall rating) among listings where it is not null"><code>listings.review_scores_rating</code>（整體評分）非空的房源，取其平均值</td>
+                                <td data-lang-zh="有評分房源的平均體驗，作為分群比較的主指標。" data-lang-en="Average experience among rated listings; the main metric for segment comparison.">有評分房源的平均體驗，作為分群比較的主指標。</td>
+                            </tr>
+                            <tr>
+                                <td data-lang-zh="低分率" data-lang-en="Low-score rate">低分率</td>
+                                <td data-lang-zh="有評分房源中，<code>listings.review_scores_rating</code>（整體評分）&lt; 4.5 的占比；分母＝有評分房源，非全部房源" data-lang-en="Among rated listings, the share with <code>listings.review_scores_rating</code> &lt; 4.5; the denominator is rated listings only, not all listings">有評分房源中，<code>listings.review_scores_rating</code>（整體評分）&lt; 4.5 的占比；分母＝有評分房源，非全部房源</td>
+                                <td data-lang-zh="有評分房源中，評分明顯偏低的占比。用來看出問題供給有多大，補均分看不見的尾部。" data-lang-en="Share of rated listings with a clearly weak score. Shows how large the problem supply is—the tail that the average conceals.">有評分房源中，評分明顯偏低的占比。用來看出問題供給有多大，補均分看不見的尾部。</td>
+                            </tr>
+                            <tr>
+                                <td data-lang-zh="超讚房東占比" data-lang-en="Superhost share">超讚房東占比</td>
+                                <td data-lang-zh="<code>listings.host_is_superhost</code>（是否為超讚房東）為 <code>t</code> 的房源數 ÷ 全部房源數" data-lang-en="Number of listings where <code>listings.host_is_superhost</code> (superhost flag) is <code>t</code>, divided by all listings"><code>listings.host_is_superhost</code>（是否為超讚房東）為 <code>t</code> 的房源數 ÷ 全部房源數</td>
+                                <td data-lang-zh="平台認證的間接品質指標，不作為主結論依據。" data-lang-en="A platform-badge proxy for quality; not used as the basis for main conclusions.">平台認證的間接品質指標，不作為主結論依據。</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <h3 class="subsection-title" data-lang-zh="偏低分群標記" data-lang-en="Flagging underperforming segments">偏低分群標記</h3>
+                <p class="stage-text" data-lang-zh="納入比較的分群，須有評分房源數 ≥ 30（<code>listings.review_scores_rating</code>（整體評分）非空）。符合下列任一規則即標記為偏低，皆相對臺北市基準（均分 4.743、低分率 11.18%）。" data-lang-en="A segment is included in the comparison only if it has at least 30 rated listings (<code>listings.review_scores_rating</code> is not null). It is flagged as underperforming if either rule below is met. Both comparisons are relative to the Taipei baseline (average rating 4.743, low-score rate 11.18%).">納入比較的分群，須有評分房源數 ≥ 30（<code>listings.review_scores_rating</code>（整體評分）非空）。符合下列任一規則即標記為偏低，皆相對臺北市基準（均分 4.743、低分率 11.18%）。</p>
+                <div class="table-scroll">
+                    <table class="poc-table poc-table--metrics">
+                        <thead>
+                            <tr>
+                                <th data-lang-zh="規則" data-lang-en="Rule">規則</th>
+                                <th data-lang-zh="定義" data-lang-en="Definition">定義</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td data-lang-zh="低分門檻" data-lang-en="Low-score threshold">低分門檻</td>
+                                <td data-lang-zh="<code>listings.review_scores_rating</code>（整體評分）&lt; 4.5 即視為低分" data-lang-en="<code>listings.review_scores_rating</code> (overall rating) &lt; 4.5 counts as low"><code>listings.review_scores_rating</code>（整體評分）&lt; 4.5 即視為低分</td>
+                            </tr>
+                            <tr>
+                                <td data-lang-zh="有評分房源數" data-lang-en="Rated-listing minimum">有評分房源數</td>
+                                <td data-lang-zh="分群內 <code>listings.review_scores_rating</code>（整體評分）非空的房源數 ≥ 30" data-lang-en="The segment must have ≥ 30 listings with a non-null <code>listings.review_scores_rating</code> (overall rating)">分群內 <code>listings.review_scores_rating</code>（整體評分）非空的房源數 ≥ 30</td>
+                            </tr>
+                            <tr>
+                                <td data-lang-zh="低均分" data-lang-en="Low average rating">低均分</td>
+                                <td data-lang-zh="分群 <code>avg_rating</code>（均分）≤ 臺北市均分 − 0.05" data-lang-en="Segment <code>avg_rating</code> (average rating) ≤ Taipei average − 0.05">分群 <code>avg_rating</code>（均分）≤ 臺北市均分 − 0.05</td>
+                            </tr>
+                            <tr>
+                                <td data-lang-zh="高低分率" data-lang-en="Elevated low-score rate">高低分率</td>
+                                <td data-lang-zh="分群 <code>low_score_rate</code>（低分率）≥ 臺北市低分率 × 1.3（約 14.5%）" data-lang-en="Segment <code>low_score_rate</code> (low-score rate) ≥ Taipei low-score rate × 1.3 (about 14.5%)">分群 <code>low_score_rate</code>（低分率）≥ 臺北市低分率 × 1.3（約 14.5%）</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <h3 class="subsection-title" data-lang-zh="主題評分（輔助解讀）" data-lang-en="Theme scores (supporting only)">主題評分（輔助解讀）</h3>
+                <p class="stage-text" data-lang-zh="Airbnb 平台既有的主題評分，非 spaCy 抽取結果。僅供與評論主題交叉對照；主結論以 <code>listings.review_scores_rating</code>（整體評分）與 <code>reviews.comments</code> （評論全文）的主題占比為準。" data-lang-en="These are Airbnb’s existing theme scores, not spaCy output. They are used only to cross-check review themes. Main conclusions use <code>listings.review_scores_rating</code> (overall rating) and theme share from <code>reviews.comments</code> (review text).">Airbnb 平台既有的主題評分，非 spaCy 抽取結果。僅供與評論主題交叉對照；主結論以 <code>listings.review_scores_rating</code>（整體評分）與 <code>reviews.comments</code> （評論全文）的主題占比為準。</p>
+                <div class="table-scroll">
+                    <table class="poc-table poc-table--equal">
+                        <thead>
+                            <tr>
+                                <th data-lang-zh="欄位" data-lang-en="Field">欄位</th>
+                                <th data-lang-zh="說明" data-lang-en="Description">說明</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><code>listings.review_scores_cleanliness</code></td>
+                                <td data-lang-zh="清潔主題評分" data-lang-en="Cleanliness theme score">清潔主題評分</td>
+                            </tr>
+                            <tr>
+                                <td><code>listings.review_scores_communication</code></td>
+                                <td data-lang-zh="溝通主題評分" data-lang-en="Communication theme score">溝通主題評分</td>
+                            </tr>
+                            <tr>
+                                <td><code>listings.review_scores_checkin</code></td>
+                                <td data-lang-zh="入住主題評分" data-lang-en="Check-in theme score">入住主題評分</td>
+                            </tr>
+                            <tr>
+                                <td><code>listings.review_scores_location</code></td>
+                                <td data-lang-zh="位置主題評分" data-lang-en="Location theme score">位置主題評分</td>
+                            </tr>
+                            <tr>
+                                <td><code>listings.review_scores_value</code></td>
+                                <td data-lang-zh="性價比主題評分" data-lang-en="Value theme score">性價比主題評分</td>
+                            </tr>
+                            <tr>
+                                <td><code>listings.review_scores_accuracy</code></td>
+                                <td data-lang-zh="描述準確度主題評分" data-lang-en="Accuracy theme score">描述準確度主題評分</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <h3 class="subsection-title" data-lang-zh="評論主題指標" data-lang-en="Review theme metrics">評論主題指標</h3>
+                <div class="table-scroll">
+                    <table class="poc-table poc-table--metrics">
+                        <thead>
+                            <tr>
+                                <th data-lang-zh="指標" data-lang-en="Metric">指標</th>
+                                <th data-lang-zh="計算方式（對應欄位）" data-lang-en="How it is calculated (fields)">計算方式（對應欄位）</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td data-lang-zh="有效分析評論" data-lang-en="Eligible reviews">有效分析評論</td>
+                                <td data-lang-zh="<code>reviews.comments</code>（評論全文）依序通過三項規則：<ol class='cell-list'><li>去 HTML 並收攏空白</li><li>清洗後長度 ≥ <code>min_comment_chars</code>（最短字元數，預設 20）</li><li>同一 <code>reviews.listing_id</code>（對應房源 ID）的重複全文只留一則</li></ol>通過者為有效評論，作為主題占比分母。" data-lang-en="<code>reviews.comments</code> (review text) must pass three rules in order:<ol class='cell-list'><li>Strip HTML and collapse whitespace</li><li>Cleaned length ≥ <code>min_comment_chars</code> (minimum characters, default 20)</li><li>Keep one copy of identical cleaned text per <code>reviews.listing_id</code> (listing ID)</li></ol>Reviews that pass are eligible reviews and form the theme-share denominator."><code>reviews.comments</code>（評論全文）依序通過三項規則：<ol class="cell-list"><li>去 HTML 並收攏空白</li><li>清洗後長度 ≥ <code>min_comment_chars</code>（最短字元數，預設 20）</li><li>同一 <code>reviews.listing_id</code>（對應房源 ID）的重複全文只留一則</li></ol>通過者為有效評論，作為主題占比分母。</td>
+                            </tr>
+                            <tr>
+                                <td data-lang-zh="主題占比" data-lang-en="Theme share">主題占比</td>
+                                <td data-lang-zh="某主題命中則數 ÷ 有效評論數。同一則評論同一主題最多計 1 次，可同時命中多個主題。命中指文字提及，不區分正負面。分群時以 <code>reviews.listing_id</code>（對應房源 ID）關聯 <code>listings</code>（房源表）的行政區、價格帶、住宿類型。" data-lang-en="Theme hit count ÷ eligible reviews. Each theme counts at most once per review; a review may hit more than one theme. A hit means the theme is mentioned, not necessarily negative. For segments, <code>reviews.listing_id</code> (listing ID) is joined to district, price band, and stay category on <code>listings</code> (listings table).">某主題命中則數 ÷ 有效評論數。同一則評論同一主題最多計 1 次，可同時命中多個主題。命中指文字提及，不區分正負面。分群時以 <code>reviews.listing_id</code>（對應房源 ID）關聯 <code>listings</code>（房源表）的行政區、價格帶、住宿類型。</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="note-box">
+                    <strong data-lang-zh="定義選擇與假設" data-lang-en="Definition choices and assumptions">定義選擇與假設</strong>
+                    <ul class="details">
+                        <li data-lang-zh="品質指標以 <code>listings.id</code>（房源 ID）為單位計算；評論以 <code>reviews.listing_id</code>（對應房源 ID）關聯。分群比較另設有評分房源數 ≥ 30，避免小樣本扭曲平均。" data-lang-en="Quality metrics are computed per <code>listings.id</code> (listing ID); reviews join on <code>reviews.listing_id</code> (listing ID). Segment comparisons also require ≥ 30 rated listings, to avoid small-sample distortion of averages.">品質指標以 <code>listings.id</code>（房源 ID）為單位計算；評論以 <code>reviews.listing_id</code>（對應房源 ID）關聯。分群比較另設有評分房源數 ≥ 30，避免小樣本扭曲平均。</li>
+                        <li data-lang-zh="<code>listings.number_of_reviews</code>（累計評論則數）為 0 不視為品質差，與低 <code>listings.review_scores_rating</code>（整體評分）分開解讀。" data-lang-en="<code>listings.number_of_reviews</code> (lifetime review count) of 0 is not treated as poor quality, and is read separately from a low <code>listings.review_scores_rating</code> (overall rating)."><code>listings.number_of_reviews</code>（累計評論則數）為 0 不視為品質差，與低 <code>listings.review_scores_rating</code>（整體評分）分開解讀。</li>
+                        <li data-lang-zh="行政區用 <code>listings.neighbourhood_cleansed</code>（清洗後行政區），不用原始 <code>neighbourhood</code>（細分區域名）。" data-lang-en="Districts use <code>listings.neighbourhood_cleansed</code> (cleaned district), not the raw <code>neighbourhood</code> (sub-area name).">行政區用 <code>listings.neighbourhood_cleansed</code>（清洗後行政區），不用原始 <code>neighbourhood</code>（細分區域名）。</li>
+                        <li data-lang-zh="近一年活躍率採 <code>listings.number_of_reviews_ltm</code>（近 12 個月評論則數），不依 <code>reviews.date</code>（評論日期）重算。" data-lang-en="The 12-month activity rate uses <code>listings.number_of_reviews_ltm</code> (reviews in the last 12 months) and is not recomputed from <code>reviews.date</code> (review date).">近一年活躍率採 <code>listings.number_of_reviews_ltm</code>（近 12 個月評論則數），不依 <code>reviews.date</code>（評論日期）重算。</li>
+                        <li data-lang-zh="主題由 spaCy PhraseMatcher 加中文字典自 <code>reviews.comments</code>（評論全文）抽取。地點、設備、清潔、溝通的高占比多為正面或中性提及；噪音較適合作為問題線索。" data-lang-en="Themes are extracted from <code>reviews.comments</code> (review text) with spaCy PhraseMatcher plus a Chinese lexicon. High shares for location, amenities, cleanliness, and communication are often positive or neutral mentions; noise is the more useful problem signal.">主題由 spaCy PhraseMatcher 加中文字典自 <code>reviews.comments</code>（評論全文）抽取。地點、設備、清潔、溝通的高占比多為正面或中性提及；噪音較適合作為問題線索。</li>
+                    </ul>
+                </div>
+            </section>
+
+            <!-- 03 資料與方法 -->
+            <section id="method" class="timeline-card">
+                <h2 class="stage-title"><span data-lang-zh="資料與方法" data-lang-en="Data &amp; Methods">資料與方法</span></h2>
+
+                <h3 class="subsection-title" data-lang-zh="資料來源" data-lang-en="Data source">資料來源</h3>
+                <p class="stage-text" data-lang-zh="資料取自 Inside Airbnb 公開資料集，分析範圍為臺北市。房源與評論分別來自 <code>listings.csv</code> 與 <code>reviews.csv</code>；行政區以 <code>listings.neighbourhood_cleansed</code>（清洗後行政區）為準。本資料集含 6,419 筆房源；主題分析以 202,548 則有效評論為分母。" data-lang-en="The data come from a public Inside Airbnb dataset; the analysis covers Taipei. Listings and reviews come from <code>listings.csv</code> and <code>reviews.csv</code>. Districts use <code>listings.neighbourhood_cleansed</code> (cleaned district). This dataset has 6,419 listings; theme analysis uses 202,548 eligible reviews as the denominator.">資料取自 Inside Airbnb 公開資料集，分析範圍為臺北市。房源與評論分別來自 <code>listings.csv</code> 與 <code>reviews.csv</code>；行政區以 <code>listings.neighbourhood_cleansed</code>（清洗後行政區）為準。本資料集含 6,419 筆房源；主題分析以 202,548 則有效評論為分母。</p>
+                <div class="table-scroll">
+                    <table class="poc-table poc-table--metrics">
+                        <thead>
+                            <tr>
+                                <th data-lang-zh="表 / 欄位" data-lang-en="Table / Field">表 / 欄位</th>
+                                <th data-lang-zh="定義" data-lang-en="Definition">定義</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><code>listings.id</code></td>
+                                <td data-lang-zh="房源主鍵。<code>reviews.listing_id</code>（對應房源 ID）關聯至此。" data-lang-en="Listing primary key. <code>reviews.listing_id</code> (listing ID) references this field.">房源主鍵。<code>reviews.listing_id</code>（對應房源 ID）關聯至此。</td>
+                            </tr>
+                            <tr>
+                                <td><code>listings.neighbourhood_cleansed</code></td>
+                                <td data-lang-zh="清洗後行政區（如大安區），作為行政區分群。" data-lang-en="Cleaned district (e.g. Da’an), used for district segments.">清洗後行政區（如大安區），作為行政區分群。</td>
+                            </tr>
+                            <tr>
+                                <td><code>listings.room_type</code> / <code>listings.property_type</code> / <code>listings.price</code></td>
+                                <td data-lang-zh="價格轉數值後分區間；房源類型與房間類型對應成住宿類型。" data-lang-en="Price is converted to numeric, then binned. Property type and room type are mapped to stay category.">價格轉數值後分區間；房源類型與房間類型對應成住宿類型。</td>
+                            </tr>
+                            <tr>
+                                <td><code>listings.number_of_reviews</code> / <code>listings.number_of_reviews_ltm</code></td>
+                                <td data-lang-zh="累計評論則數／近 12 個月評論則數。皆為 <code>listings</code> 欄位，非 <code>reviews</code> 列數。" data-lang-en="Lifetime review count / last-12-month review count. Both are <code>listings</code> fields, not <code>reviews</code> row counts.">累計評論則數／近 12 個月評論則數。皆為 <code>listings</code> 欄位，非 <code>reviews</code> 列數。</td>
+                            </tr>
+                            <tr>
+                                <td><code>listings.review_scores_rating</code></td>
+                                <td data-lang-zh="整體評分，為均分與低分率的來源。" data-lang-en="Overall rating; the source of average rating and low-score rate.">整體評分，為均分與低分率的來源。</td>
+                            </tr>
+                            <tr>
+                                <td><code>listings.host_is_superhost</code></td>
+                                <td data-lang-zh="超讚房東標記；<code>t</code> = 是、<code>f</code> = 否。" data-lang-en="Superhost flag; <code>t</code> = yes, <code>f</code> = no.">超讚房東標記；<code>t</code> = 是、<code>f</code> = 否。</td>
+                            </tr>
+                            <tr>
+                                <td><code>reviews.id</code> / <code>reviews.date</code> / <code>reviews.comments</code></td>
+                                <td data-lang-zh="主題抽取以全文為輸入；日期經正規化。" data-lang-en="Theme extraction uses the text as input; the date is normalized.">主題抽取以全文為輸入；日期經正規化。</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <p class="stage-text" data-lang-zh="來源：<a href='http://insideairbnb.com/get-the-data' target='_blank' rel='noopener noreferrer'>insideairbnb.com/get-the-data</a>。依授權僅供分析展示，不重新散布原始檔案。" data-lang-en="Source: <a href='http://insideairbnb.com/get-the-data' target='_blank' rel='noopener noreferrer'>insideairbnb.com/get-the-data</a>. Used for analysis demonstration only, per its license; raw files are not redistributed.">來源：<a href="http://insideairbnb.com/get-the-data" target="_blank" rel="noopener noreferrer">insideairbnb.com/get-the-data</a>。依授權僅供分析展示，不重新散布原始檔案。</p>
+
+                <h3 class="subsection-title" data-lang-zh="分析流程" data-lang-en="Analysis pipeline">分析流程</h3>
+                <div class="workflow-diagram">
+                    <div class="workflow-step">
+                        <span class="workflow-step-num">1</span>
+                        <span class="workflow-step-text" data-lang-zh="<strong>讀取與型別整理：</strong>載入 <code>listings.csv</code>／<code>reviews.csv</code>，以 <code>listings.id</code>（房源 ID）對齊 <code>reviews.listing_id</code>（對應房源 ID）。<code>listings.price</code>（每晚價格）轉數值；<code>reviews.date</code>（評論日期）正規化。" data-lang-en="<strong>Load and type cleanup:</strong> Load <code>listings.csv</code> / <code>reviews.csv</code> and align <code>listings.id</code> (listing ID) with <code>reviews.listing_id</code> (listing ID). Convert <code>listings.price</code> (nightly price) to numeric; normalize <code>reviews.date</code> (review date)."><strong>讀取與型別整理：</strong>載入 <code>listings.csv</code>／<code>reviews.csv</code>，以 <code>listings.id</code>（房源 ID）對齊 <code>reviews.listing_id</code>（對應房源 ID）。<code>listings.price</code>（每晚價格）轉數值；<code>reviews.date</code>（評論日期）正規化。</span>
+                    </div>
+                    <div class="workflow-arrow">↓</div>
+                    <div class="workflow-step">
+                        <span class="workflow-step-num">2</span>
+                        <span class="workflow-step-text" data-lang-zh="<strong>清洗與去重：</strong>處理 <code>listings.review_scores_rating</code>（整體評分）缺值與 <code>listings.price</code>（每晚價格）異常值；<code>reviews.comments</code>（評論全文）依三項規則清洗（去 HTML → 最短字元 → 同房源去重）。" data-lang-en="<strong>Clean and dedupe:</strong> Handle missing <code>listings.review_scores_rating</code> (overall rating) and outlier <code>listings.price</code> (nightly price). Clean <code>reviews.comments</code> (review text) with three rules (strip HTML → minimum length → same-listing dedupe)."><strong>清洗與去重：</strong>處理 <code>listings.review_scores_rating</code>（整體評分）缺值與 <code>listings.price</code>（每晚價格）異常值；<code>reviews.comments</code>（評論全文）依三項規則清洗（去 HTML → 最短字元 → 同房源去重）。</span>
+                    </div>
+                    <div class="workflow-arrow">↓</div>
+                    <div class="workflow-step">
+                        <span class="workflow-step-num">3</span>
+                        <span class="workflow-step-text" data-lang-zh="<strong>SQL／pandas 彙總：</strong>品質指標只讀 <code>listings</code> 欄位（<code>listings.number_of_reviews</code>、<code>listings.number_of_reviews_ltm</code>、<code>listings.review_scores_rating</code> 等），不 JOIN <code>reviews</code>。DuckDB 與 pandas 雙路徑計算後交叉核對。" data-lang-en="<strong>SQL / pandas summaries:</strong> Quality metrics read <code>listings</code> fields only (<code>listings.number_of_reviews</code>, <code>listings.number_of_reviews_ltm</code>, <code>listings.review_scores_rating</code>, and others), with no <code>reviews</code> JOIN. DuckDB and pandas are computed separately, then cross-checked."><strong>SQL／pandas 彙總：</strong>品質指標只讀 <code>listings</code> 欄位（<code>listings.number_of_reviews</code>、<code>listings.number_of_reviews_ltm</code>、<code>listings.review_scores_rating</code> 等），不 JOIN <code>reviews</code>。DuckDB 與 pandas 雙路徑計算後交叉核對。</span>
+                    </div>
+                    <div class="workflow-arrow">↓</div>
+                    <div class="workflow-step">
+                        <span class="workflow-step-num">4</span>
+                        <span class="workflow-step-text" data-lang-zh="<strong>分群對比：</strong>依行政區、價格帶、住宿類型重算品質指標。偏低分群：均分 ≤ 臺北市均分 − 0.05，或低分率 ≥ 臺北市低分率 × 1.3；分群須有評分房源數 ≥ 30。" data-lang-en="<strong>Segment comparison:</strong> Recompute quality metrics by district, price band, and stay category. A segment is underperforming if average rating ≤ Taipei average − 0.05, or low-score rate ≥ Taipei low-score rate × 1.3. The segment must have ≥ 30 rated listings."><strong>分群對比：</strong>依行政區、價格帶、住宿類型重算品質指標。偏低分群：均分 ≤ 臺北市均分 − 0.05，或低分率 ≥ 臺北市低分率 × 1.3；分群須有評分房源數 ≥ 30。</span>
+                    </div>
+                    <div class="workflow-arrow">↓</div>
+                    <div class="workflow-step">
+                        <span class="workflow-step-num">5</span>
+                        <span class="workflow-step-text" data-lang-zh="<strong>評論主題抽取：</strong>spaCy PhraseMatcher 對有效評論全量 202,548 則做多標籤分類，並以同一批評論產出偏低分群交叉表。" data-lang-en="<strong>Review theme extraction:</strong> spaCy PhraseMatcher assigns multiple theme labels to all 202,548 eligible reviews, and the same reviews are used for the underperforming-segment cross-tab."><strong>評論主題抽取：</strong>spaCy PhraseMatcher 對有效評論全量 202,548 則做多標籤分類，並以同一批評論產出偏低分群交叉表。</span>
+                    </div>
+                </div>
+
+                <h3 class="subsection-title" data-lang-zh="技術與品質控管" data-lang-en="Methods and quality control">技術與品質控管</h3>
+                <ul class="details">
+                    <li data-lang-zh="<strong>SQL（DuckDB）：</strong>以 GROUP BY 產出臺北市、行政區、價格帶、住宿類型品質表與偏低分群表。另 JOIN 核對 <code>listings.number_of_reviews</code>（累計評論則數）與 <code>reviews</code> 實際列數（共 6,419 筆，吻合率 100%）。品質指標不經 <code>reviews</code> JOIN。" data-lang-en="<strong>SQL (DuckDB):</strong> GROUP BY produces Taipei, district, price-band, and stay-category quality tables, plus the underperforming-segment table. A JOIN checks <code>listings.number_of_reviews</code> (lifetime review count) against actual <code>reviews</code> row counts (6,419 listings, 100% match). Quality metrics do not JOIN <code>reviews</code>."><strong>SQL（DuckDB）：</strong>以 GROUP BY 產出臺北市、行政區、價格帶、住宿類型品質表與偏低分群表。另 JOIN 核對 <code>listings.number_of_reviews</code>（累計評論則數）與 <code>reviews</code> 實際列數（共 6,419 筆，吻合率 100%）。品質指標不經 <code>reviews</code> JOIN。</li>
+                    <li data-lang-zh="<strong>pandas：</strong>負責合併、分區間、歸類與指標計算，並與 SQL 結果交叉核對後匯出。" data-lang-en="<strong>pandas:</strong> Handles merging, binning, category mapping, and metric calculation, then exports after the SQL cross-check."><strong>pandas：</strong>負責合併、分區間、歸類與指標計算，並與 SQL 結果交叉核對後匯出。</li>
+                    <li data-lang-zh="<strong>spaCy：</strong>以 PhraseMatcher 與中文字典，將 <code>reviews.comments</code>（評論全文）標為七主題（清潔、噪音、溝通、取消／入住異常、地點／交通、性價比、設備）。" data-lang-en="<strong>spaCy:</strong> PhraseMatcher plus a Chinese lexicon tags <code>reviews.comments</code> (review text) into seven themes (cleanliness, noise, communication, cancellation / check-in issues, location / transit, value, amenities)."><strong>spaCy：</strong>以 PhraseMatcher 與中文字典，將 <code>reviews.comments</code>（評論全文）標為七主題（清潔、噪音、溝通、取消／入住異常、地點／交通、性價比、設備）。</li>
+                    <li data-lang-zh="<strong>評論清洗：</strong>三項規則、有效評論分母與主題計數見「評論主題指標」。" data-lang-en="<strong>Review cleaning:</strong> The three rules, the eligible-review denominator, and theme counting are defined under Review theme metrics."><strong>評論清洗：</strong>三項規則、有效評論分母與主題計數見「評論主題指標」。</li>
+                </ul>
+
+                <div class="note-box">
+                    <strong data-lang-zh="程式碼與資料" data-lang-en="Code and data">程式碼與資料</strong>
+                    <ul class="details">
+                        <li data-lang-zh="<strong>GitHub Repo：</strong>可重跑的清洗、DuckDB SQL、pandas 與 spaCy 程式碼（<a href='https://github.com/dearsloth/airbnb-quality-diagnostic' target='_blank' rel='noopener noreferrer'>github.com/dearsloth/airbnb-quality-diagnostic</a>）" data-lang-en="<strong>GitHub repo:</strong> Cleaning, DuckDB SQL, pandas, and spaCy code that can be re-run (<a href='https://github.com/dearsloth/airbnb-quality-diagnostic' target='_blank' rel='noopener noreferrer'>github.com/dearsloth/airbnb-quality-diagnostic</a>)"><strong>GitHub Repo：</strong>可重跑的清洗、DuckDB SQL、pandas 與 spaCy 程式碼（<a href="https://github.com/dearsloth/airbnb-quality-diagnostic" target="_blank" rel="noopener noreferrer">github.com/dearsloth/airbnb-quality-diagnostic</a>）</li>
+                        <li data-lang-zh="<strong>資料使用：</strong>取自 Inside Airbnb，僅供分析展示，不重新散布原始檔案。" data-lang-en="<strong>Data use:</strong> From Inside Airbnb; for analysis demonstration only; raw files are not redistributed."><strong>資料使用：</strong>取自 Inside Airbnb，僅供分析展示，不重新散布原始檔案。</li>
+                    </ul>
+                </div>
+            </section>
+
+            <!-- 04 Power BI 儀表板 -->
+            <section id="dashboard" class="timeline-card">
+                <h2 class="stage-title"><span data-lang-zh="Power BI 儀表板" data-lang-en="Power BI Dashboard">Power BI 儀表板</span></h2>
+                <p class="stage-text" data-lang-zh="以下為本專案的互動儀表板，對照臺北市品質指標、分群落差與評論主題。" data-lang-en="The interactive dashboard below compares Taipei quality metrics, segment gaps, and review themes.">以下為本專案的互動儀表板，對照臺北市品質指標、分群落差與評論主題。</p>
+                <div class="pbi-embed">
+                    <iframe title="Airbnb_Taipei_Quality" width="600" height="373.5" src="https://app.powerbi.com/view?r=eyJrIjoiMWRjNDBlYzctYjgyZC00ZTMwLWJlMWQtNjg2MzI3M2YzMGYxIiwidCI6IjNkNTYyMDI2LWEzNTYtNGViMi1hNzllLTVhYjk1ZTYzOTM2NiIsImMiOjEwfQ%3D%3D&pageName=2c12124076babb87b565" frameborder="0" allowFullScreen="true"></iframe>
+                </div>
+            </section>
+
+            <!-- 05 關鍵發現 -->
+            <section id="findings" class="timeline-card">
+                <h2 class="stage-title"><span data-lang-zh="關鍵發現" data-lang-en="Key Findings">關鍵發現</span></h2>
+                <p class="stage-text" data-lang-zh="臺北市基準（<code>listings</code> 表 6,419 筆）：均分（<code>listings.review_scores_rating</code> 均值）4.743、低分率（&lt; 4.5）11.18%。以下「偏低」皆相對此基準；pandas 與 DuckDB SQL 交叉核對通過。" data-lang-en="Taipei baseline (6,419 <code>listings</code> rows): average rating (<code>listings.review_scores_rating</code> mean) 4.743, low-score rate (&lt; 4.5) 11.18%. All underperforming flags below are relative to this baseline. pandas and DuckDB SQL cross-checked.">臺北市基準（<code>listings</code> 表 6,419 筆）：均分（<code>listings.review_scores_rating</code> 均值）4.743、低分率（&lt; 4.5）11.18%。以下「偏低」皆相對此基準；pandas 與 DuckDB SQL 交叉核對通過。</p>
+
+                <h3 class="subsection-title" data-lang-zh="哪裡差：臺北市品質指標摘要" data-lang-en="Where it is weak: Taipei quality summary">哪裡差：臺北市品質指標摘要</h3>
+                <div class="table-scroll">
+                    <table class="poc-table poc-table--equal">
+                        <thead>
+                            <tr>
+                                <th data-lang-zh="指標" data-lang-en="Metric">指標</th>
+                                <th data-lang-zh="數值" data-lang-en="Value">數值</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td data-lang-zh="房源數" data-lang-en="Listings">房源數</td>
+                                <td class="num">6,419</td>
+                            </tr>
+                            <tr>
+                                <td data-lang-zh="有評分房源數" data-lang-en="Rated listings">有評分房源數</td>
+                                <td class="num">5,196</td>
+                            </tr>
+                            <tr>
+                                <td data-lang-zh="有評論率" data-lang-en="Review coverage">有評論率</td>
+                                <td class="num">80.95%</td>
+                            </tr>
+                            <tr>
+                                <td data-lang-zh="近一年活躍率" data-lang-en="12-month activity rate">近一年活躍率</td>
+                                <td class="num">69.37%</td>
+                            </tr>
+                            <tr>
+                                <td data-lang-zh="均分" data-lang-en="Average rating">均分</td>
+                                <td class="num">4.743</td>
+                            </tr>
+                            <tr>
+                                <td data-lang-zh="低分率（&lt; 4.5）" data-lang-en="Low-score rate (&lt; 4.5)">低分率（&lt; 4.5）</td>
+                                <td class="num">11.18%</td>
+                            </tr>
+                            <tr>
+                                <td data-lang-zh="超讚房東占比" data-lang-en="Superhost share">超讚房東占比</td>
+                                <td class="num">48.20%</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <ul class="details" style="font-size: 0.9rem; color: var(--text-muted);">
+                    <li data-lang-zh="「有評分房源」＝ <code>listings.review_scores_rating</code>（整體評分）非空" data-lang-en="&quot;Rated listings&quot; = non-null <code>listings.review_scores_rating</code> (overall rating)">「有評分房源」＝ <code>listings.review_scores_rating</code>（整體評分）非空</li>
+                    <li data-lang-zh="「有評論率」＝ <code>listings.number_of_reviews</code>（累計評論則數）≥ 1" data-lang-en="&quot;Review coverage&quot; = <code>listings.number_of_reviews</code> (lifetime review count) ≥ 1">「有評論率」＝ <code>listings.number_of_reviews</code>（累計評論則數）≥ 1</li>
+                    <li data-lang-zh="「近一年活躍率」＝ <code>listings.number_of_reviews_ltm</code>（近 12 個月評論則數）≥ 1" data-lang-en="&quot;12-month activity rate&quot; = <code>listings.number_of_reviews_ltm</code> (reviews in the last 12 months) ≥ 1">「近一年活躍率」＝ <code>listings.number_of_reviews_ltm</code>（近 12 個月評論則數）≥ 1</li>
+                </ul>
+                <p class="stage-text" style="font-size: 0.9rem; color: var(--text-muted);" data-lang-zh="定義見「指標定義」。" data-lang-en="See Metric Definitions.">定義見「指標定義」。</p>
+
+                <h3 class="subsection-title" data-lang-zh="哪裡差：偏低分群（行政區／價格帶／住宿類型）" data-lang-en="Where it is weak: underperforming segments (district / price band / stay category)">哪裡差：偏低分群（行政區／價格帶／住宿類型）</h3>
+                <p class="stage-text" data-lang-zh="三維分群後，有評分房源 ≥ 30 且符合「低均分（≤ 臺北市 4.743 − 0.05）或高低分率（低分率 ≥ 臺北市 11.18% × 1.3）」的組合如下。Unknown 價格帶為 <code>price</code> 缺值，不列入改善重點。" data-lang-en="After the three-way split, segments with ≥ 30 rated listings and either a low average (≤ Taipei 4.743 − 0.05) or an elevated low-score rate (low-score rate ≥ Taipei 11.18% × 1.3) are below. The Unknown price band is missing <code>price</code> and is not an improvement priority.">三維分群後，有評分房源 ≥ 30 且符合「低均分（≤ 臺北市 4.743 − 0.05）或高低分率（低分率 ≥ 臺北市 11.18% × 1.3）」的組合如下。Unknown 價格帶為 <code>price</code> 缺值，不列入改善重點。</p>
+                <div class="table-scroll">
+                    <table class="poc-table poc-table--segments">
+                        <thead>
+                            <tr>
+                                <th data-lang-zh="分群" data-lang-en="Segment">分群</th>
+                                <th data-lang-zh="房源數" data-lang-en="Listings">房源數</th>
+                                <th data-lang-zh="有評論率" data-lang-en="Review coverage">有評論率</th>
+                                <th data-lang-zh="均分" data-lang-en="Avg. rating">均分</th>
+                                <th data-lang-zh="低分率" data-lang-en="Low-score rate">低分率</th>
+                                <th data-lang-zh="低分相對倍率" data-lang-en="Low-score ratio">低分相對倍率</th>
+                                <th data-lang-zh="觀察" data-lang-en="Observation">觀察</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td data-lang-zh="飯店類" data-lang-en="Hotel-type">飯店類</td>
+                                <td class="num">357</td>
+                                <td class="num">74.79%</td>
+                                <td class="num">4.61</td>
+                                <td class="num">24.72%</td>
+                                <td class="num">2.21×</td>
+                                <td data-lang-zh="低均分且高低分率；評分落差最大。近一年活躍率僅 40.06%（臺北市 69.37%）" data-lang-en="Low average and elevated low-score rate; largest rating gap. 12-month activity rate is only 40.06% (Taipei 69.37%)">低均分且高低分率；評分落差最大。近一年活躍率僅 40.06%（臺北市 69.37%）</td>
+                            </tr>
+                            <tr>
+                                <td data-lang-zh="南港區" data-lang-en="Nangang">南港區</td>
+                                <td class="num">76</td>
+                                <td class="num">71.05%</td>
+                                <td class="num">4.68</td>
+                                <td class="num">22.22%</td>
+                                <td class="num">1.99×</td>
+                                <td data-lang-zh="低均分且高低分率；僅 54 筆有評分房源，樣本偏小" data-lang-en="Low average and elevated low-score rate; only 54 rated listings, so the sample is small">低均分且高低分率；僅 54 筆有評分房源，樣本偏小</td>
+                            </tr>
+                            <tr>
+                                <td data-lang-zh="≤1500 元" data-lang-en="≤ NT$1,500">≤1500 元</td>
+                                <td class="num">1,377</td>
+                                <td class="num">72.84%</td>
+                                <td class="num">4.65</td>
+                                <td class="num">18.84%</td>
+                                <td class="num">1.69×</td>
+                                <td data-lang-zh="低均分且高低分率；有評分房源 1,003 筆，偏低供給規模最大" data-lang-en="Low average and elevated low-score rate; 1,003 rated listings, the largest underperforming supply">低均分且高低分率；有評分房源 1,003 筆，偏低供給規模最大</td>
+                            </tr>
+                            <tr>
+                                <td>Unknown</td>
+                                <td class="num">482</td>
+                                <td class="num">64.94%</td>
+                                <td class="num">4.70</td>
+                                <td class="num">17.57%</td>
+                                <td class="num">1.57×</td>
+                                <td data-lang-zh="僅高低分率；缺價格，非建議重點" data-lang-en="Elevated low-score rate only; missing price, not an improvement priority">僅高低分率；缺價格，非建議重點</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <ul class="details" style="font-size: 0.9rem; color: var(--text-muted);">
+                    <li data-lang-zh="「低分相對倍率」＝ 該分群 <code>low_score_rate</code>（低分率）÷ 臺北市低分率 11.18%（如 2.21× 表示低分率約為臺北市 2.21 倍）。" data-lang-en="&quot;Low-score ratio&quot; = the segment <code>low_score_rate</code> (low-score rate) ÷ Taipei low-score rate 11.18% (e.g. 2.21× means the low-score rate is about 2.21 times Taipei).">「低分相對倍率」＝ 該分群 <code>low_score_rate</code>（低分率）÷ 臺北市低分率 11.18%（如 2.21× 表示低分率約為臺北市 2.21 倍）。</li>
+                </ul>
+
+                <h3 class="subsection-title" data-lang-zh="差在什麼：臺北市評論主題" data-lang-en="What is wrong: Taipei review themes">差在什麼：臺北市評論主題</h3>
+                <p class="stage-text" data-lang-zh="分母為「有效評論」全量 <strong>202,548</strong> 則：通過去 HTML、最短 20 字、同房源去重三項清洗（見「指標定義」）。命中＝文字提及該主題，不區分正負面。" data-lang-en="The denominator is all 202,548 eligible reviews after three cleaning steps: strip HTML, minimum 20 characters, and same-listing dedupe (see Metric Definitions). A hit means the theme is mentioned, not necessarily negative.">分母為「有效評論」全量 <strong>202,548</strong> 則：通過去 HTML、最短 20 字、同房源去重三項清洗（見「指標定義」）。命中＝文字提及該主題，不區分正負面。</p>
+                <div class="table-scroll">
+                    <table class="poc-table">
+                        <thead>
+                            <tr>
+                                <th data-lang-zh="主題" data-lang-en="Theme">主題</th>
+                                <th data-lang-zh="則數" data-lang-en="Count">則數</th>
+                                <th data-lang-zh="占比" data-lang-en="Share">占比</th>
+                                <th data-lang-zh="觀察" data-lang-en="Observation">觀察</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td data-lang-zh="地點／交通" data-lang-en="Location / transit">地點／交通</td>
+                                <td class="num">108,452</td>
+                                <td class="num">53.54%</td>
+                                <td data-lang-zh="占比最高，多為正面或中性提及" data-lang-en="Highest share; mostly positive or neutral mentions">占比最高，多為正面或中性提及</td>
+                            </tr>
+                            <tr>
+                                <td data-lang-zh="設備" data-lang-en="Amenities">設備</td>
+                                <td class="num">95,288</td>
+                                <td class="num">47.04%</td>
+                                <td data-lang-zh="多為正面或中性提及" data-lang-en="Mostly positive or neutral mentions">多為正面或中性提及</td>
+                            </tr>
+                            <tr>
+                                <td data-lang-zh="清潔" data-lang-en="Cleanliness">清潔</td>
+                                <td class="num">65,041</td>
+                                <td class="num">32.11%</td>
+                                <td data-lang-zh="正面或中性偏多；不宜直接當痛點" data-lang-en="Mostly positive or neutral; do not treat as a pain point by itself">正面或中性偏多；不宜直接當痛點</td>
+                            </tr>
+                            <tr>
+                                <td data-lang-zh="溝通" data-lang-en="Communication">溝通</td>
+                                <td class="num">62,449</td>
+                                <td class="num">30.83%</td>
+                                <td data-lang-zh="占比高，多為回覆與入住的正面提及；不宜直接當痛點" data-lang-en="High share; mostly positive mentions of replies and check-in; not a pain point by itself">占比高，多為回覆與入住的正面提及；不宜直接當痛點</td>
+                            </tr>
+                            <tr>
+                                <td data-lang-zh="噪音" data-lang-en="Noise">噪音</td>
+                                <td class="num">9,995</td>
+                                <td class="num">4.93%</td>
+                                <td data-lang-zh="較適合作為問題線索，後續與偏低分群交叉" data-lang-en="The more useful problem signal; crossed with underperforming segments next">較適合作為問題線索，後續與偏低分群交叉</td>
+                            </tr>
+                            <tr>
+                                <td data-lang-zh="性價比" data-lang-en="Value">性價比</td>
+                                <td class="num">9,511</td>
+                                <td class="num">4.70%</td>
+                                <td data-lang-zh="占比低，非本輪改善主軸" data-lang-en="Low share; not the main improvement axis this round">占比低，非本輪改善主軸</td>
+                            </tr>
+                            <tr>
+                                <td data-lang-zh="取消／入住異常" data-lang-en="Cancellation / check-in issues">取消／入住異常</td>
+                                <td class="num">697</td>
+                                <td class="num">0.34%</td>
+                                <td data-lang-zh="字典覆蓋偏窄，飯店類需人工抽查補強" data-lang-en="Narrow lexicon coverage; hotel-type needs a manual sample to fill the gap">字典覆蓋偏窄，飯店類需人工抽查補強</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <h3 class="subsection-title" data-lang-zh="差在什麼：偏低分群 × 主題交叉" data-lang-en="What is wrong: underperforming segment × theme">差在什麼：偏低分群 × 主題交叉</h3>
+                <p class="stage-text" data-lang-zh="與上方主題頻次同一批全量 202,548 則。臺北市基準為噪音 4.93%、清潔負向 2.44%。清潔僅計負向命中（字典含「髒」「異味」等），不含正面提及。" data-lang-en="Uses the same full set of 202,548 eligible reviews as the theme-frequency table above. Taipei baselines are noise 4.93% and negative cleanliness 2.44%. Cleanliness here counts negative hits only (the lexicon includes 髒, 異味, and similar), not positive mentions.">與上方主題頻次同一批全量 202,548 則。臺北市基準為噪音 4.93%、清潔負向 2.44%。清潔僅計負向命中（字典含「髒」「異味」等），不含正面提及。</p>
+                <div class="table-scroll">
+                    <table class="poc-table poc-table--crosstab">
+                        <thead>
+                            <tr>
+                                <th data-lang-zh="分群" data-lang-en="Segment">分群</th>
+                                <th data-lang-zh="有效評論數" data-lang-en="Eligible reviews">有效評論數</th>
+                                <th data-lang-zh="噪音占比" data-lang-en="Noise share">噪音占比</th>
+                                <th data-lang-zh="清潔負向占比" data-lang-en="Negative cleanliness">清潔負向占比</th>
+                                <th data-lang-zh="解讀" data-lang-en="Interpretation">解讀</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td data-lang-zh="≤1500 元" data-lang-en="≤ NT$1,500">≤1500 元</td>
+                                <td class="num">27,931</td>
+                                <td class="num"><strong>6.15%</strong></td>
+                                <td class="num">2.66%</td>
+                                <td data-lang-zh="噪音高於臺北市 4.93%；清潔負向 2.66% 略高於 2.44%，可順帶檢查，不以清潔為主 → 以噪音為主" data-lang-en="Noise is above Taipei 4.93%; negative cleanliness 2.66% is only slightly above 2.44%—spot-check, but do not lead with cleanliness → act on noise">噪音高於臺北市 4.93%；清潔負向 2.66% 略高於 2.44%，可順帶檢查，不以清潔為主 → 以噪音為主</td>
+                            </tr>
+                            <tr>
+                                <td data-lang-zh="飯店類" data-lang-en="Hotel-type">飯店類</td>
+                                <td class="num">5,944</td>
+                                <td class="num"><strong>5.70%</strong></td>
+                                <td class="num"><strong>3.10%</strong></td>
+                                <td data-lang-zh="噪音高於臺北市約 0.8 個百分點、清潔負向高約 0.7 個百分點 → 兩主題均可列；低分率仍需抽查其他原因" data-lang-en="Noise is about 0.8 percentage points above Taipei, and negative cleanliness about 0.7 percentage points above → list both themes; the low-score rate still needs a sample for other causes">噪音高於臺北市約 0.8 個百分點、清潔負向高約 0.7 個百分點 → 兩主題均可列；低分率仍需抽查其他原因</td>
+                            </tr>
+                            <tr>
+                                <td data-lang-zh="南港區" data-lang-en="Nangang">南港區</td>
+                                <td class="num">916</td>
+                                <td class="num">3.17%</td>
+                                <td class="num">2.40%</td>
+                                <td data-lang-zh="噪音低於臺北市、清潔負向持平 → 主題無法解釋低分" data-lang-en="Noise is below Taipei; negative cleanliness is flat → themes do not explain the low scores">噪音低於臺北市、清潔負向持平 → 主題無法解釋低分</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- 06 產品建議與限制 -->
+            <section id="recommend" class="timeline-card">
+                <h2 class="stage-title"><span data-lang-zh="產品建議與限制" data-lang-en="Recommendations &amp; Limitations">產品建議與限制</span></h2>
+
+                <h3 class="subsection-title" data-lang-zh="先改什麼：三條優先順序" data-lang-en="What to fix first: three priorities">先改什麼：三條優先順序</h3>
+                <p class="stage-text" data-lang-zh="對應上方偏低分群與主題交叉，本表列出該先處理的重點與建議。" data-lang-en="Mapped to the underperforming segments and theme cross-tab above, this table lists the priorities to handle first and the recommended actions.">對應上方偏低分群與主題交叉，本表列出該先處理的重點與建議。</p>
+                <div class="table-scroll">
+                    <table class="poc-table poc-table--recommend">
+                        <thead>
+                            <tr>
+                                <th data-lang-zh="順位" data-lang-en="Priority">順位</th>
+                                <th data-lang-zh="重點" data-lang-en="Focus">重點</th>
+                                <th data-lang-zh="建議" data-lang-en="Recommendation">建議</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td class="center">1</td>
+                                <td data-lang-zh="≤1500 元 × 噪音" data-lang-en="≤ NT$1,500 × noise">≤1500 元 × 噪音</td>
+                                <td data-lang-zh="在房源說明與入住前訊息揭露臨街／捷運／隔音條件；提供止音條、厚窗簾、耳塞等低成本隔音措施。清潔負向僅略高，可順帶檢查，不以清潔為主軸。" data-lang-en="Disclose street-facing / MRT / soundproofing conditions in the listing and pre-arrival messages; offer low-cost measures such as door seals, heavy curtains, and earplugs. Negative cleanliness is only slightly elevated—spot-check, but do not make cleanliness the main action.">在房源說明與入住前訊息揭露臨街／捷運／隔音條件；提供止音條、厚窗簾、耳塞等低成本隔音措施。清潔負向僅略高，可順帶檢查，不以清潔為主軸。</td>
+                            </tr>
+                            <tr>
+                                <td class="center">2</td>
+                                <td data-lang-zh="飯店類 × 噪音＋清潔負向" data-lang-en="Hotel-type × noise + negative cleanliness">飯店類 × 噪音＋清潔負向</td>
+                                <td data-lang-zh="在房源說明與入住前訊息揭露臨街／捷運／隔音條件；提供止音條、厚窗簾、耳塞等低成本隔音措施。同步檢查房清潔、異味與備品。低分率不能只靠這兩主題，另抽 30–50 則低分評論查房型／流程／服務。" data-lang-en="Disclose street-facing / MRT / soundproofing conditions in the listing and pre-arrival messages; offer low-cost measures such as door seals, heavy curtains, and earplugs. Also check room cleanliness, odor, and supplies. The low-score rate cannot be explained by these two themes alone—sample 30–50 low-score reviews for listing type / process / service.">在房源說明與入住前訊息揭露臨街／捷運／隔音條件；提供止音條、厚窗簾、耳塞等低成本隔音措施。同步檢查房清潔、異味與備品。低分率不能只靠這兩主題，另抽 30–50 則低分評論查房型／流程／服務。</td>
+                            </tr>
+                            <tr>
+                                <td class="center">3</td>
+                                <td data-lang-zh="南港區 × 主題未對上" data-lang-en="Nangang × unmatched themes">南港區 × 主題未對上</td>
+                                <td data-lang-zh="不以噪音／清潔方案套用。先複查低分評論，並檢查是否由少數房東或房型拉低。" data-lang-en="Do not apply a noise or cleanliness playbook. First review low-score comments, and check whether a few hosts or stay types are pulling the stats down.">不以噪音／清潔方案套用。先複查低分評論，並檢查是否由少數房東或房型拉低。</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="decision-box">
+                    <p data-lang-zh="<strong>結論：</strong>先處理 ≤1500 元的噪音，以及飯店類的噪音與清潔負向；南港區評分偏低但這兩主題未偏高，先抽查低分評論。" data-lang-en="<strong>Conclusion:</strong> Act first on noise for ≤ NT$1,500, and on noise plus negative cleanliness for hotel-type. Nangang ratings are weak but those two themes are not elevated—sample low-score reviews first."><strong>結論：</strong>先處理 ≤1500 元的噪音，以及飯店類的噪音與清潔負向；南港區評分偏低但這兩主題未偏高，先抽查低分評論。</p>
+                </div>
+
+                <h3 class="subsection-title" data-lang-zh="限制" data-lang-en="Limitations">限制</h3>
+                <ul class="details">
+                    <li data-lang-zh="<strong>資料範圍：</strong>Inside Airbnb 臺灣僅提供臺北市資料，無其他縣市。分析範圍因此限定臺北市，結果不能外推至其他城市或平台整體。" data-lang-en="<strong>Data scope:</strong> Inside Airbnb’s Taiwan data covers Taipei only, with no other cities. The analysis is therefore limited to Taipei and does not generalize to other cities or the platform as a whole."><strong>資料範圍：</strong>Inside Airbnb 臺灣僅提供臺北市資料，無其他縣市。分析範圍因此限定臺北市，結果不能外推至其他城市或平台整體。</li>
+                    <li data-lang-zh="<strong>時間錯位：</strong>價格、行政區、住宿類型是抓取當下的房源屬性；評分與評論是多年累積。舊評論仍掛在現況分群上，主題占比不一定代表目前仍在營運的供給。" data-lang-en="<strong>Temporal mismatch:</strong> Price, district, and stay category are listing attributes at scrape time; ratings and reviews accumulate over years. Older reviews still attach to current segments, so theme share may not describe currently operating supply."><strong>時間錯位：</strong>價格、行政區、住宿類型是抓取當下的房源屬性；評分與評論是多年累積。舊評論仍掛在現況分群上，主題占比不一定代表目前仍在營運的供給。</li>
+                    <li data-lang-zh="<strong>評論自我選擇：</strong>極端正負體驗較可能留下評論，中庸體驗可能被低估。" data-lang-en="<strong>Review self-selection:</strong> Extreme positive or negative stays are more likely to leave a review; average stays may be undercounted."><strong>評論自我選擇：</strong>極端正負體驗較可能留下評論，中庸體驗可能被低估。</li>
+                    <li data-lang-zh="<strong>過短評論：</strong>清洗後短於 20 字的評論不納入主題分析。中文短負評（如「很吵」「好髒」）可能被排除，痛點主題占比可能被低估。" data-lang-en="<strong>Short reviews dropped:</strong> Reviews shorter than 20 characters after cleaning are excluded from theme analysis. Short Chinese complaints (e.g. 很吵, 好髒) may be dropped, so pain-point theme share can be understated."><strong>過短評論：</strong>清洗後短於 20 字的評論不納入主題分析。中文短負評（如「很吵」「好髒」）可能被排除，痛點主題占比可能被低估。</li>
+                    <li data-lang-zh="<strong>規則式主題：</strong>PhraseMatcher 加自建字典，命中＝提及，不區分正負面。未另建人工標註黃金標準，無法確認全部詞條的命中是否正確、覆蓋是否完整；結果需人工抽查。" data-lang-en="<strong>Rule-based themes:</strong> PhraseMatcher plus a custom lexicon; a hit is a mention, not sentiment. No separately annotated gold standard was built, so it is not possible to confirm that every term hits correctly or that coverage is complete; results need a manual sample."><strong>規則式主題：</strong>PhraseMatcher 加自建字典，命中＝提及，不區分正負面。未另建人工標註黃金標準，無法確認全部詞條的命中是否正確、覆蓋是否完整；結果需人工抽查。</li>
+                    <li data-lang-zh="<strong>評論票與房源票：</strong>均分與低分率以房源為單位（一房一票）；主題占比以評論為單位。高評論量房源會主導分群的主題占比。" data-lang-en="<strong>Review-weighted vs listing-weighted:</strong> Average rating and low-score rate are listing-weighted (one listing, one vote); theme share is review-weighted. High-review listings can dominate a segment’s theme share."><strong>評論票與房源票：</strong>均分與低分率以房源為單位（一房一票）；主題占比以評論為單位。高評論量房源會主導分群的主題占比。</li>
+                    <li data-lang-zh="<strong>非活躍供給：</strong>品質指標納入近一年無評論的房源。例如飯店類近一年活躍率僅約 40%，低分可能來自已停業或季節性物件，不代表現役供給都能改善。" data-lang-en="<strong>Inactive supply:</strong> Quality metrics include listings with no reviews in the last 12 months. For example, hotel-type 12-month activity rate is only about 40%, so low scores may come from closed or seasonal listings and do not mean currently active supply can all be improved."><strong>非活躍供給：</strong>品質指標納入近一年無評論的房源。例如飯店類近一年活躍率僅約 40%，低分可能來自已停業或季節性物件，不代表現役供給都能改善。</li>
+                    <li data-lang-zh="<strong>非因果推論：</strong>分群評分偏低或主題占比偏高，僅以主觀判斷，非已驗證根因。" data-lang-en="<strong>Not causal:</strong> A weak segment rating or an elevated theme share is only a subjective judgment, not a confirmed root cause."><strong>非因果推論：</strong>分群評分偏低或主題占比偏高，僅以主觀判斷，非已驗證根因。</li>
+                </ul>
+            </section>
+        </article>
+    </main>
+
+    <footer>
+        <p>© 鄭書涵 Shu-Han Zheng | Personal Portfolio</p>
+    </footer>
+
+    <script src="js/common.js"></script>
+    <script>
+        (function initProjectToc() {
+            const links = Array.from(document.querySelectorAll('.project-toc-label, .project-toc-item > a[href^="#"]'));
+            if (!links.length) return;
+
+            const sections = links
+                .map((link) => document.getElementById(link.getAttribute('href').slice(1)))
+                .filter(Boolean);
+
+            const setActive = (id) => {
+                links.forEach((link) => {
+                    link.classList.toggle('is-active', link.getAttribute('href') === `#${id}`);
+                });
+            };
+
+            const observer = new IntersectionObserver(
+                (entries) => {
+                    const visible = entries
+                        .filter((entry) => entry.isIntersecting)
+                        .sort((a, b) => b.intersectionRatio - a.intersectionRatio);
+                    if (visible[0]) setActive(visible[0].target.id);
+                },
+                { rootMargin: '-20% 0px -55% 0px', threshold: [0, 0.25, 0.5, 1] }
+            );
+
+            sections.forEach((section) => observer.observe(section));
+
+            const bindSmoothScroll = (anchor) => {
+                if (anchor.dataset.tocBound === '1') return;
+                anchor.dataset.tocBound = '1';
+                anchor.addEventListener('click', (e) => {
+                    const href = anchor.getAttribute('href');
+                    if (!href || href === '#') return;
+                    const target = document.getElementById(href.slice(1));
+                    if (!target) return;
+                    e.preventDefault();
+                    target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                });
+            };
+
+            links.forEach(bindSmoothScroll);
+
+            const syncSubtitles = () => {
+                document.querySelectorAll('.project-toc-list > .project-toc-item').forEach((item) => {
+                    const link = item.querySelector(':scope > a[href^="#"]');
+                    if (!link) return;
+
+                    const section = document.getElementById(link.getAttribute('href').slice(1));
+                    const subtitleEls = section
+                        ? Array.from(section.querySelectorAll('.subsection-title, .stage-subtitle'))
+                        : [];
+
+                    let wrap = item.querySelector(':scope > .project-toc-subs-wrap');
+                    if (!subtitleEls.length) {
+                        if (wrap) wrap.remove();
+                        return;
+                    }
+
+                    if (!wrap) {
+                        wrap = document.createElement('div');
+                        wrap.className = 'project-toc-subs-wrap';
+                        const list = document.createElement('ul');
+                        list.className = 'project-toc-subs';
+                        wrap.appendChild(list);
+                        item.appendChild(wrap);
+                    }
+
+                    const list = wrap.querySelector('.project-toc-subs');
+                    list.replaceChildren(
+                        ...subtitleEls.map((el, index) => {
+                            if (!el.id) el.id = `${section.id}-sub-${index + 1}`;
+                            const li = document.createElement('li');
+                            const subLink = document.createElement('a');
+                            subLink.href = `#${el.id}`;
+                            subLink.textContent = el.textContent.trim();
+                            bindSmoothScroll(subLink);
+                            li.appendChild(subLink);
+                            return li;
+                        })
+                    );
+                });
+            };
+
+            syncSubtitles();
+            document.addEventListener('langchange', syncSubtitles);
+        })();
+    </script>
+</body>
+</html>

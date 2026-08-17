@@ -1,0 +1,71 @@
+:root {
+    /* Blue-forward palette — deep navy & lake blue */
+    --primary-color: #1A365D;
+    --primary-dark: #0F2744;
+
+    /* Accents */
+    --accent-color: #0077B6;
+    --accent-sky: #0EA5E9;
+    --accent-rose: #0EA5E9; /* alias: hover / highlight (blue, not pink) */
+    --accent-lavender: #38BDF8;
+
+    /* Light tints */
+    --accent-light: #E0F2FE;
+    --accent-light-blue: #E0F2FE;
+    --accent-light-lavender: #E8F4FC;
+
+    /* Backgrounds */
+    --bg-color: #F8FAFC;
+    --bg-gradient-start: #F8FBFD;
+    --bg-gradient-mid: #F1F7FB;
+    --bg-gradient-end: #E8F1F8;
+
+    --card-bg: #FFFFFF;
+    --surface-soft: #F1F7FB;
+
+    /* Text */
+    --text-color: var(--text-level-1);
+    --text-secondary: var(--text-level-4);
+    --text-muted: #64748B;
+
+    /* Content hierarchy (dark → light) */
+    --text-level-1: #0B1F33; /* page / section titles */
+    --text-level-2: #1A4A6E; /* subsection titles */
+    --text-level-3: #2563A8; /* bold item labels */
+    --text-level-4: #64748B; /* body / descriptive text */
+
+    /* Borders */
+    --border-color: #E2E8F0;
+
+    /* Hero & header */
+    --hero-overlay: rgba(15, 39, 68, 0.45);
+    --header-bg: rgba(26, 54, 93, 0.9);
+    --header-border: rgba(255, 255, 255, 0.1);
+
+    /* Hero text */
+    --hero-text: #FFFFFF;
+    --hero-text-soft: #E2E8F0;
+    --hero-accent: #7DD3FC;
+    --hero-gradient-end: #BAE6FD;
+
+    /* Shadows */
+    --shadow-color: rgba(26, 54, 93, 0.08);
+    --shadow-accent: rgba(0, 119, 182, 0.18);
+    --shadow-rose: rgba(14, 165, 233, 0.18);
+
+    /* Nav */
+    --nav-hover: #7DD3FC;
+    --nav-text: #E2E8F0;
+
+    /* Chips & tags */
+    --chip-bg: #E8F4FC;
+    --chip-text: #0369A1;
+
+    /* Metric card variants — three blue depths */
+    --metric-slate: #1A365D;
+    --metric-slate-bg: #E2E8F0;
+    --metric-lavender: #0077B6;
+    --metric-lavender-bg: #E0F2FE;
+    --metric-rose: #0EA5E9;
+    --metric-rose-bg: #E0F7FF;
+}

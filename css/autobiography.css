@@ -1,0 +1,128 @@
+.auto-hero {
+    background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 60%, #4A6477 100%);
+    color: white;
+    padding: 6rem 2rem 3rem;
+    text-align: center;
+}
+
+.auto-hero h1 {
+    font-size: 2rem;
+    margin: 0 0 0.5rem;
+    background: linear-gradient(135deg, var(--hero-text) 0%, var(--hero-gradient-end) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.auto-hero .subtitle {
+    color: var(--hero-accent);
+    font-size: 1.1rem;
+}
+
+.auto-section {
+    background: var(--card-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    padding: 2rem;
+    margin-bottom: 2rem;
+    box-shadow: 0 2px 6px var(--shadow-color);
+}
+
+.auto-section h2 {
+    color: var(--text-level-1);
+    font-size: 1.3rem;
+    font-weight: 800;
+    margin-top: 0;
+    margin-bottom: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.auto-section p {
+    color: var(--text-level-4);
+    line-height: 1.9;
+    margin-bottom: 1rem;
+}
+
+.auto-section p:last-child {
+    margin-bottom: 0;
+}
+
+.auto-section p strong {
+    color: var(--text-level-3);
+    font-weight: 700;
+}
+
+.career-timeline {
+    border-left: 3px solid var(--accent-color);
+    padding-left: 1.5rem;
+    margin-left: 0.5rem;
+}
+
+.career-item {
+    margin-bottom: 1.5rem;
+    position: relative;
+}
+
+.career-item::before {
+    content: '';
+    position: absolute;
+    left: -1.85rem;
+    top: 0.4rem;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: var(--accent-color);
+    border: 2px solid white;
+    box-shadow: 0 0 0 2px var(--accent-color);
+}
+
+.career-item h3 {
+    color: var(--text-level-2);
+    font-size: 1.05rem;
+    font-weight: 700;
+    margin: 0 0 0.3rem;
+}
+
+.career-item .period {
+    color: var(--text-level-3);
+    font-size: 0.85rem;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+}
+
+.career-item p {
+    font-size: 0.95rem;
+    color: var(--text-level-4);
+}
+
+.skill-pills {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-top: 1rem;
+}
+
+.skill-pill {
+    background: var(--accent-light);
+    color: var(--accent-color);
+    padding: 0.3rem 0.8rem;
+    border-radius: 20px;
+    font-size: 0.85rem;
+    font-weight: 600;
+}
+
+.back-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    color: var(--accent-color);
+    text-decoration: none;
+    font-weight: 600;
+    margin-bottom: 1.5rem;
+}
+
+.back-link:hover {
+    text-decoration: underline;
+}

@@ -1,0 +1,53 @@
+html {
+    scroll-behavior: smooth;
+    scroll-padding-top: 80px;
+}
+
+body {
+    font-family: "PingFang TC", "Microsoft JhengHei", -apple-system, sans-serif;
+    background: linear-gradient(180deg, var(--bg-gradient-start) 0%, var(--bg-gradient-mid) 45%, var(--bg-gradient-end) 100%);
+    background-attachment: fixed;
+    color: var(--text-color);
+    margin: 0;
+    padding: 0;
+    line-height: 1.6;
+    min-height: 100vh;
+}
+
+.container {
+    max-width: 960px;
+    margin: 3rem auto;
+    padding: 0 1rem;
+}
+
+.container--project {
+    margin: 0 auto;
+    padding-top: 5.5rem;
+    padding-bottom: 2rem;
+}
+
+.section-block {
+    padding-top: 1rem;
+    margin-bottom: 3.5rem;
+}
+
+.section-header {
+    margin-bottom: 1.5rem;
+    text-align: center;
+    display: flex;
+    justify-content: center;
+}
+
+.section-title {
+    font-size: 1.6rem;
+    font-weight: 800;
+    color: var(--text-level-1);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.6rem;
+}
+
+@media (max-width: 768px) {
+    header { padding: 1rem 1.5rem; }
+}

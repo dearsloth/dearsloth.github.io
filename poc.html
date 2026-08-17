@@ -1,0 +1,913 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="登入通知自動化導入評估 — 從需求範圍到 AWS／SaaS 技術 PoC 決策">
+    <title>登入通知自動化導入評估 | 鄭書涵 Portfolio</title>
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="css/variables.css">
+    <link rel="stylesheet" href="css/base.css">
+    <link rel="stylesheet" href="css/components.css">
+    <link rel="stylesheet" href="css/project.css">
+
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@type": "CreativeWork",
+        "name": "登入通知自動化導入評估｜從需求範圍到技術 PoC 決策",
+        "author": { "@type": "Person", "name": "鄭書涵 Shu-Han Zheng" },
+        "description": "界定登入通知自動化場景與成功標準，比較 AWS SES、SaaS 郵件服務與維持現狀，提出分階段導入建議",
+        "keywords": ["Requirements", "MoSCoW", "AWS SES", "SaaS", "Technical PoC", "Trade-offs"]
+    }
+    </script>
+
+    <style>
+        .subsection-title {
+            margin: 1.4rem 0 0.7rem 0;
+            font-size: 1.05rem;
+            font-weight: 700;
+            color: var(--text-level-2);
+        }
+        .table-scroll {
+            width: 100%;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+            margin: 0.5rem 0 1rem 0;
+        }
+        .poc-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 0.4rem 0 1.2rem 0;
+            font-size: 0.88rem;
+            min-width: 640px;
+        }
+        .poc-table th,
+        .poc-table td {
+            padding: 0.75rem 0.9rem;
+            border: 1px solid var(--border-color);
+            text-align: left;
+            vertical-align: top;
+            line-height: 1.65;
+        }
+        .poc-table th {
+            background: var(--surface-soft);
+            color: var(--text-level-2);
+            font-weight: 700;
+            font-size: 0.85rem;
+            text-align: center;
+            vertical-align: middle;
+        }
+        .poc-table .cell-list {
+            margin: 0;
+            padding-left: 1.4em;
+        }
+        .poc-table .cell-list li {
+            margin-bottom: 0.4rem;
+        }
+        .poc-table .cell-list li:last-child {
+            margin-bottom: 0;
+        }
+        .poc-table--head-center {
+            table-layout: fixed;
+        }
+        .poc-table--head-center th:first-child,
+        .poc-table--head-center td:first-child {
+            width: 5.5rem;
+            white-space: nowrap;
+        }
+        .poc-table--head-center th:nth-child(2),
+        .poc-table--head-center td:nth-child(2),
+        .poc-table--head-center th:nth-child(3),
+        .poc-table--head-center td:nth-child(3) {
+            width: calc((100% - 5.5rem) / 2);
+        }
+        .poc-table--moscow th:first-child,
+        .poc-table--moscow td:first-child {
+            width: 6rem;
+            white-space: nowrap;
+        }
+        .poc-table--compare {
+            table-layout: fixed;
+        }
+        .poc-table--compare th:first-child,
+        .poc-table--compare td:first-child {
+            width: 7.2rem;
+            white-space: nowrap;
+        }
+        .poc-table--compare th:nth-child(5),
+        .poc-table--compare td:nth-child(5) {
+            width: 7.5rem;
+        }
+        .poc-table--compare td {
+            text-align: center;
+            vertical-align: middle;
+        }
+        .poc-table--compare td:nth-child(5) {
+            text-align: left;
+        }
+        .poc-table--compare tr.is-highlight td {
+            text-align: left;
+            vertical-align: top;
+        }
+        .poc-table--compare tr.is-highlight td:first-child {
+            text-align: center;
+            vertical-align: middle;
+        }
+        .poc-table td:first-child {
+            text-align: center;
+            vertical-align: middle;
+        }
+        .poc-table--option-log tbody tr > td:nth-last-child(2) {
+            text-align: left;
+            vertical-align: middle;
+        }
+        .poc-table--option-log td[rowspan] {
+            text-align: center;
+            vertical-align: middle;
+        }
+        /* 各方案整條區塊外框：較 --border-color #E2E8F0 深一階 */
+        .poc-table--option-log {
+            --option-edge: #CBD5E1;
+            table-layout: fixed;
+        }
+        .poc-table--option-log th:nth-child(1) {
+            width: 7.5rem;
+        }
+        .poc-table--option-log th:nth-child(2) {
+            width: 21%;
+        }
+        .poc-table--option-log th:nth-child(3) {
+            width: calc(79% - 7.5rem);
+        }
+        .poc-table--option-log tr.option-group-start > td {
+            border-top-color: var(--option-edge);
+        }
+        .poc-table--option-log tr.option-group-end > td {
+            border-bottom-color: var(--option-edge);
+        }
+        .poc-table--option-log td[rowspan] {
+            border-left-color: var(--option-edge);
+            border-right-color: var(--option-edge);
+            border-top-color: var(--option-edge);
+            border-bottom-color: var(--option-edge);
+        }
+        .poc-table--option-log tbody tr > td:last-child {
+            border-right-color: var(--option-edge);
+        }
+        .poc-table td {
+            color: var(--text-level-4);
+        }
+        .poc-table td p {
+            margin: 0 0 0.45rem 0;
+        }
+        .poc-table td p:last-child {
+            margin-bottom: 0;
+        }
+        .poc-table td strong,
+        .poc-table th strong {
+            color: var(--text-level-3);
+        }
+        .poc-table tr.is-highlight td {
+            background: var(--accent-light);
+        }
+        .poc-table tr.is-highlight td:first-child {
+            border-left: 3px solid var(--accent-color);
+        }
+        .screenshot-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1.25rem 1.5rem;
+            margin: 1.2rem 0 1.6rem 0;
+        }
+        .screenshot-grid--stack {
+            grid-template-columns: 1fr;
+            width: 100%;
+            max-width: none;
+        }
+        .screenshot-slot {
+            border: 1px dashed var(--border-color);
+            border-radius: 8px;
+            background: var(--surface-soft);
+            min-height: 140px;
+            padding: 1.2rem;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            color: var(--text-muted);
+            font-size: 0.88rem;
+            line-height: 1.6;
+        }
+        .screenshot-slot i {
+            font-size: 1.5rem;
+            color: var(--accent-color);
+            margin-bottom: 0.5rem;
+        }
+        .screenshot-slot strong {
+            display: block;
+            color: var(--text-level-2);
+            margin-bottom: 0.25rem;
+        }
+        .screenshot-card {
+            margin: 0;
+            padding: 0;
+            border: none;
+            background: transparent;
+        }
+        .screenshot-card img {
+            display: block;
+            width: 100%;
+            height: auto;
+            border-radius: 8px;
+            border: 1px solid var(--border-color, #e0e0e0);
+            object-fit: cover;
+            object-position: top center;
+        }
+        .screenshot-grid--stack .screenshot-card img {
+            object-fit: contain;
+            height: auto;
+        }
+        .screenshot-card figcaption {
+            padding: 0.55rem 0 0 0;
+            font-size: 0.9rem;
+            line-height: 1.55;
+            color: var(--text-muted);
+            text-align: center;
+        }
+        .screenshot-card figcaption strong {
+            display: block;
+            color: var(--text-level-2);
+            margin-bottom: 0.2rem;
+        }
+        .decision-box {
+            background: var(--accent-light);
+            border-left: 4px solid var(--accent-color);
+            border-radius: 8px;
+            padding: 1.1rem 1.25rem;
+            margin: 1rem 0;
+        }
+        .decision-box p {
+            margin: 0 0 0.6rem 0;
+            color: var(--text-level-4);
+            line-height: 1.75;
+        }
+        .decision-box p:last-child { margin-bottom: 0; }
+        .decision-box strong { color: var(--text-level-2); }
+        .decision-box > strong:first-child {
+            display: block;
+            margin-bottom: 0.6rem;
+        }
+        .decision-box ul.details {
+            margin: 0;
+            color: var(--text-level-4);
+        }
+        .decision-box ul.details li:last-child { margin-bottom: 0; }
+        .note-banner {
+            background: var(--surface-soft);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 0.85rem 1.1rem;
+            font-size: 0.88rem;
+            color: var(--text-muted);
+            line-height: 1.65;
+            margin: 0 0 1rem 0;
+        }
+        .note-box {
+            background: var(--surface-soft);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 0.95rem 1.1rem;
+            font-size: 0.88rem;
+            color: var(--text-muted);
+            line-height: 1.65;
+            margin: 1rem 0;
+        }
+        .note-box > strong:first-child {
+            display: block;
+            color: var(--text-level-2);
+            margin-bottom: 0.55rem;
+        }
+        .note-box ul.details {
+            margin: 0;
+            color: var(--text-muted);
+        }
+        .note-box ul.details li:last-child { margin-bottom: 0; }
+        @media (max-width: 768px) {
+            .poc-table { font-size: 0.8rem; }
+            .poc-table th, .poc-table td { padding: 0.55rem 0.6rem; }
+            .screenshot-grid { grid-template-columns: 1fr; }
+        }
+
+        /* 左側大綱：三欄置中，文章在正中，大綱貼在文章左側 */
+        .container--with-toc {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) minmax(0, 960px) minmax(0, 1fr);
+            column-gap: 1.75rem;
+            width: 100%;
+            max-width: none;
+            margin-left: auto;
+            margin-right: auto;
+            padding-left: 1rem;
+            padding-right: 1rem;
+            box-sizing: border-box;
+            align-items: start;
+        }
+        .container--with-toc > .project-toc {
+            grid-column: 1;
+            justify-self: end;
+            width: 100%;
+            max-width: 20rem;
+            position: sticky;
+            top: 5.5rem;
+            max-height: calc(100vh - 6.5rem);
+            overflow-y: auto;
+            padding: 0.85rem 0;
+            text-align: left;
+        }
+        .container--with-toc > article {
+            grid-column: 2;
+            min-width: 0;
+            width: 100%;
+        }
+        .project-toc-label {
+            display: block;
+            margin: 0 0 0.85rem 0;
+            padding: 0;
+            font-size: 0.88rem;
+            font-weight: 800;
+            line-height: 1.35;
+            letter-spacing: 0;
+            text-transform: none;
+            text-align: left;
+            color: var(--text-level-1);
+            text-decoration: none;
+            transition: color 0.2s ease;
+        }
+        .project-toc-label:hover,
+        .project-toc-label.is-active {
+            color: var(--accent-color);
+        }
+        .project-toc-list {
+            list-style: none;
+            margin: 0;
+            padding: 0;
+            text-align: left;
+        }
+        .project-toc-list .project-toc-item > a {
+            display: block;
+            padding: 0.45rem 0;
+            border-left: none;
+            color: var(--text-level-4);
+            text-decoration: none;
+            text-align: left;
+            font-size: 0.95rem;
+            line-height: 1.4;
+            transition: color 0.2s ease;
+        }
+        .project-toc-list .project-toc-item > a:hover {
+            color: var(--accent-color);
+            background: transparent;
+        }
+        .project-toc-list .project-toc-item > a.is-active {
+            color: var(--accent-color);
+            font-weight: 600;
+            background: transparent;
+        }
+        .project-toc-item {
+            margin: 0;
+        }
+        .project-toc-subs-wrap {
+            display: grid;
+            grid-template-rows: 0fr;
+            transition: grid-template-rows 0.28s ease;
+        }
+        .project-toc-item:hover .project-toc-subs-wrap,
+        .project-toc-item:focus-within .project-toc-subs-wrap {
+            grid-template-rows: 1fr;
+        }
+        .project-toc-subs {
+            list-style: none;
+            margin: 0;
+            padding: 0 0 0 0.75rem;
+            overflow: hidden;
+            min-height: 0;
+        }
+        .project-toc-subs li {
+            padding: 0;
+        }
+        .project-toc-subs a {
+            display: block;
+            padding: 0.2rem 0;
+            font-size: 0.82rem;
+            line-height: 1.4;
+            color: var(--text-muted);
+            text-decoration: none;
+            transition: color 0.2s ease;
+        }
+        .project-toc-item:hover .project-toc-subs a,
+        .project-toc-item:focus-within .project-toc-subs a {
+            color: var(--text-level-4);
+        }
+        .project-toc-subs a:hover {
+            color: var(--accent-color);
+        }
+        @media (max-width: 1200px) {
+            .container--with-toc {
+                grid-template-columns: 1fr;
+                max-width: 960px;
+                margin-left: auto;
+                margin-right: auto;
+                column-gap: 0;
+            }
+            .container--with-toc > .project-toc,
+            .container--with-toc > article {
+                grid-column: 1;
+                justify-self: stretch;
+                max-width: none;
+            }
+            .container--with-toc > .project-toc {
+                position: static;
+                max-height: none;
+                overflow: visible;
+                margin-bottom: 0.5rem;
+                padding: 0.75rem 0 0.85rem;
+                border-bottom: 1px solid var(--border-color);
+            }
+            .project-toc-list .project-toc-item > a {
+                font-size: 0.95rem;
+            }
+            .project-toc-label {
+                font-size: 0.88rem;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <header class="header--with-logo">
+        <a href="index.html" class="header-logo">鄭書涵 Shu-Han Zheng</a>
+        <nav class="nav-links" aria-label="主要導覽">
+            <button id="lang-toggle-btn" class="btn-lang" type="button">
+                <i class="fa-solid fa-globe" aria-hidden="true"></i>
+                <span id="lang-text">中文</span>
+            </button>
+        </nav>
+    </header>
+
+    <main class="container container--project container--with-toc">
+        <nav class="project-toc" aria-label="頁面大綱">
+            <a href="#hero" class="project-toc-label" data-lang-zh="登入通知自動化導入評估" data-lang-en="Login Notification Feasibility Assessment">登入通知自動化導入評估</a>
+            <ul class="project-toc-list">
+                <li class="project-toc-item"><a href="#stage1" data-lang-zh="問題定義" data-lang-en="Problem Framing">問題定義</a></li>
+                <li class="project-toc-item"><a href="#stage2" data-lang-zh="範圍與取捨" data-lang-en="Scope &amp; Trade-offs">範圍與取捨</a></li>
+                <li class="project-toc-item"><a href="#stage3" data-lang-zh="技術 PoC" data-lang-en="Tech PoC">技術 PoC</a></li>
+                <li class="project-toc-item"><a href="#stage4" data-lang-zh="決策與下一步" data-lang-en="Decision &amp; Next Steps">決策與下一步</a></li>
+            </ul>
+        </nav>
+        <article>
+            <section id="hero" class="hero-project" aria-labelledby="poc-title">
+                <p class="hero-project-brand" data-lang-zh="需求取捨 × 技術 PoC" data-lang-en="Requirements × Tech PoC">需求取捨 × 技術 PoC</p>
+                <h1 id="poc-title" data-lang-zh="登入通知自動化導入評估" data-lang-en="Login Notification Feasibility Assessment">登入通知自動化導入評估</h1>
+                <p data-lang-zh="本專案以「登入通知」為情境，記錄「是否導入自動化通知」的決策過程：針對「何時需要自動寄信」、「成功標準」及「不涉及哪些功能」方向進行確認，再實際測試 AWS SES 與 SaaS 郵件服務，對照維持現狀（不寄送登入通知）的風險後，給出一個分階段執行的建議。" data-lang-en="This project uses login notifications as the scenario to document whether to adopt automated notifications: clarifying when auto-sending is needed, what success looks like, and what stays out of scope; then hands-on testing of AWS SES and a SaaS email service against the risk of the status quo (no login notifications)—ending with a staged recommendation.">本專案以「登入通知」為情境，記錄「是否導入自動化通知」的決策過程：針對「何時需要自動寄信」、「成功標準」及「不涉及哪些功能」方向進行確認，再實際測試 AWS SES 與 SaaS 郵件服務，對照維持現狀（不寄送登入通知）的風險後，給出一個分階段執行的建議。</p>
+                <div class="tag-group">
+                    <span class="tag" data-lang-zh="需求收斂" data-lang-en="Requirements">需求收斂</span>
+                    <span class="tag">User Story</span>
+                    <span class="tag">MoSCoW</span>
+                    <span class="tag">AWS SES</span>
+                    <span class="tag" data-lang-zh="SaaS 評估" data-lang-en="SaaS Evaluation">SaaS 評估</span>
+                    <span class="tag" data-lang-zh="方案取捨" data-lang-en="Trade-offs">方案取捨</span>
+                </div>
+            </section>
+
+            <!-- 01 問題定義 -->
+            <section id="stage1" class="timeline-card">
+                <h2 class="stage-title"><span data-lang-zh="問題定義" data-lang-en="Problem Framing">問題定義</span></h2>
+                <ul class="details">
+                    <li data-lang-zh="<strong>問題：</strong>使用者登入帳號時，目前沒有登入通知機制；一旦帳號遭盜用或出現異常登入，使用者本人不會即時收到提醒，事後也缺乏可查證的寄送紀錄。" data-lang-en="<strong>The problem:</strong> There is currently no login notification mechanism. If an account is compromised or a login looks abnormal, the user is not alerted in time, and there is no verifiable send record afterward."><strong>問題：</strong>使用者登入帳號時，目前沒有登入通知機制；一旦帳號遭盜用或出現異常登入，使用者本人不會即時收到提醒，事後也缺乏可查證的寄送紀錄。</li>
+                    <li data-lang-zh="<strong>期望目標：</strong>制定一套自動發送登入通知流程，登入成功後就能自動寄出通知；如通知寄送失敗，要能被人發現；每月的寄信成本也要能被合理預估。" data-lang-en="<strong>Desired outcome:</strong> Build an automated login-notification flow that sends after a successful login; failed sends must be discoverable; and monthly sending cost should stay reasonably predictable."><strong>期望目標：</strong>制定一套自動發送登入通知流程，登入成功後就能自動寄出通知；如通知寄送失敗，要能被人發現；每月的寄信成本也要能被合理預估。</li>
+                </ul>
+
+                <h3 class="subsection-title" data-lang-zh="成功標準" data-lang-en="Success criteria">成功標準</h3>
+                <ul class="details">
+                    <li data-lang-zh="<strong>時效性：</strong>從登入成功到信件送達收件匣，希望能控制在 1 分鐘內「即時」完成，才能讓使用者第一時間察覺異常登入。" data-lang-en="<strong>Timeliness:</strong> From successful login to inbox delivery should stay within about 1 minute, so users can spot abnormal logins right away."><strong>時效性：</strong>從登入成功到信件送達收件匣，希望能控制在 1 分鐘內「即時」完成，才能讓使用者第一時間察覺異常登入。</li>
+                    <li data-lang-zh="<strong>可追蹤性：</strong>每封信件寄出成功或失敗都要留存紀錄，以便查證。" data-lang-en="<strong>Traceability:</strong> Every send’s success or failure must be logged for later verification."><strong>可追蹤性：</strong>每封信件寄出成功或失敗都要留存紀錄，以便查證。</li>
+                    <li data-lang-zh="<strong>成本可預估性：</strong>以月量約 3,000 封通知信件為示意情境，確認費用落在可控範圍，避免導入後成本超出預期。" data-lang-en="<strong>Predictable cost:</strong> Using about 3,000 notification emails per month as an illustrative volume, confirm cost stays controllable and does not become a surprise after adoption."><strong>成本可預估性：</strong>以月量約 3,000 封通知信件為示意情境，確認費用落在可控範圍，避免導入後成本超出預期。</li>
+                    <li data-lang-zh="<strong>失敗可見性：</strong>v1 寄信失敗不要求即時告警，但需有方法讓人事後察覺失敗，而不是完全不知道是否寄信成功。" data-lang-en="<strong>Failure visibility:</strong> v1 does not require real-time alerts, but there must be a way for someone to notice failures afterward—rather than having no idea whether sends succeeded."><strong>失敗可見性：</strong>v1 寄信失敗不要求即時告警，但需有方法讓人事後察覺失敗，而不是完全不知道是否寄信成功。</li>
+                </ul>
+            </section>
+
+            <!-- 02 範圍取捨 -->
+            <section id="stage2" class="timeline-card">
+                <h2 class="stage-title"><span data-lang-zh="範圍與取捨" data-lang-en="Scope &amp; Trade-offs">範圍與取捨</span></h2>
+                <p class="stage-text" data-lang-zh="這裡的範圍以 v1 為目標：先驗證「登入通知是否能自動化」，如驗證可行，再決定後續是否擴充。" data-lang-en="Scope targets v1: first validate whether login notifications can be automated; if that works, decide what to expand next.">這裡的範圍以 v1 為目標：先驗證「登入通知是否能自動化」，如驗證可行，再決定後續是否擴充。</p>
+
+                <h3 class="subsection-title" data-lang-zh="1. 需求對照" data-lang-en="1. Requirements mapping">1. 需求對照</h3>
+                <div class="table-scroll">
+                    <table class="poc-table poc-table--head-center">
+                        <thead>
+                            <tr>
+                                <th data-lang-zh="角色" data-lang-en="Role">角色</th>
+                                <th data-lang-zh="需求目標" data-lang-en="Goal">需求目標</th>
+                                <th data-lang-zh="驗收標準" data-lang-en="Acceptance criteria">驗收標準</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><strong data-lang-zh="產品負責人" data-lang-en="Product Owner">產品負責人</strong></td>
+                                <td data-lang-zh="<ol class='cell-list'><li>使用者登入成功後，系統能自動寄出登入通知，無需人工介入</li><li>寄出後能確認每封通知的實際結果</li><li>通知信有簡單、固定的 HTML 範本，能顯示登入時間、裝置與粗略地點</li></ol>" data-lang-en="<ol class='cell-list'><li>After a successful login, the system sends a login notification automatically with no manual intervention</li><li>The actual result of each notification can be confirmed after sending</li><li>Notifications use a simple, fixed HTML template showing login time, device, and approximate location</li></ol>"><ol class='cell-list'><li>使用者登入成功後，系統能自動寄出登入通知，無需人工介入</li><li>寄出後能確認每封通知的實際結果</li><li>通知信有簡單、固定的 HTML 範本，能顯示登入時間、裝置與粗略地點</li></ol></td>
+                                <td data-lang-zh="<ol class='cell-list'><li>登入成功後，無需人工介入即可自動觸發寄送</li><li>系統或後台可查到每封信為「已送出」或「失敗」</li><li>寄出內容可套用固定 HTML 範本（含登入時間、裝置、粗略地點欄位）</li></ol>" data-lang-en="<ol class='cell-list'><li>Sending is triggered automatically after a successful login, with no manual step</li><li>The system or admin console can show each email as “sent” or “failed”</li><li>Outgoing content uses a fixed HTML template (with login time, device, and approximate-location fields)</li></ol>"><ol class='cell-list'><li>登入成功後，無需人工介入即可自動觸發寄送</li><li>系統或後台可查到每封信為「已送出」或「失敗」</li><li>寄出內容可套用固定 HTML 範本（含登入時間、裝置、粗略地點欄位）</li></ol></td>
+                            </tr>
+                            <tr>
+                                <td><strong data-lang-zh="收件人" data-lang-en="Recipient">收件人</strong></td>
+                                <td data-lang-zh="<ol class='cell-list'><li>收到標題與內文一致、來源可辨識的登入通知信</li><li>能從信中得知本次登入的時間、裝置與粗略地點，判斷是否為本人操作</li><li>通知能在合理時效內送達</li></ol>" data-lang-en="<ol class='cell-list'><li>Receive a login notification with consistent subject/body and an identifiable sender</li><li>Can tell from the email the login time, device, and approximate location to judge whether it was them</li><li>The notification arrives within a reasonable time window</li></ol>"><ol class='cell-list'><li>收到標題與內文一致、來源可辨識的登入通知信</li><li>能從信中得知本次登入的時間、裝置與粗略地點，判斷是否為本人操作</li><li>通知能在合理時效內送達</li></ol></td>
+                                <td data-lang-zh="<ol class='cell-list'><li>信件進入收件匣，而非垃圾郵件資料夾</li><li>從登入成功到送達收件匣控制在約 1 分鐘內</li></ol>" data-lang-en="<ol class='cell-list'><li>The message lands in the inbox, not the spam folder</li><li>Delivery from successful login to inbox stays within about 1 minute</li></ol>"><ol class='cell-list'><li>信件進入收件匣，而非垃圾郵件資料夾</li><li>從登入成功到送達收件匣控制在約 1 分鐘內</li></ol></td>
+                            </tr>
+                            <tr>
+                                <td><strong data-lang-zh="技術評估者" data-lang-en="Tech evaluator">技術評估者</strong></td>
+                                <td data-lang-zh="<ol class='cell-list'><li>釐清免費方案與付費方案的價格級距與實際限制（如每日寄送額度）</li><li>掌握每日寄送量與額度使用狀況</li><li>確認成本是否可控</li></ol>" data-lang-en="<ol class='cell-list'><li>Clarify free and paid pricing tiers and real limits (e.g. daily send quotas)</li><li>Track daily send volume and quota usage</li><li>Confirm whether cost stays controllable</li></ol>"><ol class='cell-list'><li>釐清免費方案與付費方案的價格級距與實際限制（如每日寄送額度）</li><li>掌握每日寄送量與額度使用狀況</li><li>確認成本是否可控</li></ol></td>
+                                <td data-lang-zh="<ol class='cell-list'><li>整理出免費方案與付費方案的價格級距，並標註查詢日期（定價可能隨時調整）</li><li>每日寄送量與額度使用留有紀錄，能據此判斷是否需升級至付費方案</li><li>以月量約 3,000 封試算，確認費用落在可控範圍</li></ol>" data-lang-en="<ol class='cell-list'><li>Document free and paid price bands with the query date noted (pricing may change)</li><li>Daily volume and quota usage are logged, supporting upgrade decisions</li><li>A cost estimate at about 3,000 emails/month confirms spend stays controllable</li></ol>"><ol class='cell-list'><li>整理出免費方案與付費方案的價格級距，並標註查詢日期（定價可能隨時調整）</li><li>每日寄送量與額度使用留有紀錄，能據此判斷是否需升級至付費方案</li><li>以月量約 3,000 封試算，確認費用落在可控範圍</li></ol></td>
+                            </tr>
+                            <tr>
+                                <td><strong data-lang-zh="決策主管" data-lang-en="Decision maker">決策主管</strong></td>
+                                <td data-lang-zh="取得不同發送登入通知方案在成本與風險上的可比對資訊" data-lang-en="Obtain comparable cost and risk information across login-notification options">取得不同發送登入通知方案在成本與風險上的可比對資訊</td>
+                                <td data-lang-zh="能據此做出是否導入自動發送登入通知流程的決策" data-lang-en="Can make a go / no-go decision on adopting an automated login-notification flow">能據此做出是否導入自動發送登入通知流程的決策</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <h3 class="subsection-title" data-lang-zh="2. MoSCoW 優先序" data-lang-en="2. MoSCoW priorities">2. MoSCoW 優先序</h3>
+                <div class="table-scroll">
+                    <table class="poc-table poc-table--moscow">
+                        <thead>
+                            <tr>
+                                <th data-lang-zh="優先序" data-lang-en="Priority">優先序</th>
+                                <th data-lang-zh="項目" data-lang-en="Item">項目</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr class="is-highlight">
+                                <td><strong data-lang-zh="必備" data-lang-en="Must have">必備</strong></td>
+                                <td data-lang-zh="<ol class='cell-list'><li>登入成功後自動寄出通知，無須人工介入</li><li>每封通知的寄送結果（成功／失敗）可於後台查詢</li><li>觸發至送達收件匣控制在約 1 分鐘內，且進入收件匣而非垃圾郵件資料夾</li><li>提供登入通知專用 HTML 範本，固定顯示登入時間、裝置與粗略地點欄位</li><li>產出成本評估：免費方案與付費方案價格級距（標註查詢日期），並以月量約 3,000 封試算</li><li>每日寄送量與額度使用留存紀錄，可判斷是否接近上限</li></ol>" data-lang-en="<ol class='cell-list'><li>Send notifications automatically after a successful login, with no manual intervention</li><li>Each notification’s send result (success / failure) can be looked up in the admin console</li><li>Delivery from trigger to inbox stays within about 1 minute and lands in the inbox, not spam</li><li>Provide a login-notification HTML template that always shows login time, device, and approximate-location fields</li><li>Produce a cost assessment: free and paid price bands (with query date), plus an estimate at about 3,000 emails/month</li><li>Keep daily send volume and quota-usage records to tell when limits are near</li></ol>"><ol class='cell-list'><li>登入成功後自動寄出通知，無須人工介入</li><li>每封通知的寄送結果（成功／失敗）可於後台查詢</li><li>觸發至送達收件匣控制在約 1 分鐘內，且進入收件匣而非垃圾郵件資料夾</li><li>提供登入通知專用 HTML 範本，固定顯示登入時間、裝置與粗略地點欄位</li><li>產出成本評估：免費方案與付費方案價格級距（標註查詢日期），並以月量約 3,000 封試算</li><li>每日寄送量與額度使用留存紀錄，可判斷是否接近上限</li></ol></td>
+                            </tr>
+                            <tr>
+                                <td><strong data-lang-zh="應備" data-lang-en="Should have">應備</strong></td>
+                                <td data-lang-zh="<ol class='cell-list'><li>寄送失敗可重試（限次自動重試或手動重送）</li><li>顯示寄件者名稱、回覆信箱與回覆內容</li><li>寄送紀錄可匯出（如 CSV），方便事後查核</li><li>失敗原因可粗分（例如 API 拒絕與退信 bounce）</li><li>支援對指定測試信箱試發，上線前驗證範本與投遞</li></ol>" data-lang-en="<ol class='cell-list'><li>Failed sends can be retried (limited automatic retries or manual resend)</li><li>Sender display name and Reply-To address are configurable</li><li>Send logs can be exported (e.g. CSV) for later review</li><li>Failure reasons can be roughly classified (e.g. API rejection vs bounce)</li><li>Support test sends to a designated inbox to validate template and delivery before go-live</li></ol>"><ol class='cell-list'><li>寄送失敗可重試（限次自動重試或手動重送）</li><li>顯示寄件者名稱、回覆信箱與回覆內容</li><li>寄送紀錄可匯出（如 CSV），方便事後查核</li><li>失敗原因可粗分（例如 API 拒絕與退信 bounce）</li><li>支援對指定測試信箱試發，上線前驗證範本與投遞</li></ol></td>
+                            </tr>
+                            <tr>
+                                <td><strong data-lang-zh="可選" data-lang-en="Could have">可選</strong></td>
+                                <td data-lang-zh="<ol class='cell-list'><li>寄送失敗自動告警至 Discord／Slack（v1 不要求即時告警）</li><li>額度接近上限時預警（如達 80%）</li><li>簡易儀表板：當日／當月寄出數與成功率</li><li>IP 反查登入地點，讓信件中顯示的地點欄位更精確</li><li>依風險條件（如新裝置、異地登入）才觸發寄送，而非每次登入都寄</li><li>HTML 範本響應式／閱讀體驗微調</li></ol>" data-lang-en="<ol class='cell-list'><li>Automatic failure alerts to Discord / Slack (not required as real-time alerts in v1)</li><li>Quota warnings when usage nears the limit (e.g. 80%)</li><li>A simple dashboard for daily / monthly send counts and success rate</li><li>IP geolocation lookup to make the location field in the email more precise</li><li>Trigger sends only under risk conditions (e.g. new device, unfamiliar location), not on every login</li><li>Minor responsive / readability tweaks to the HTML template</li></ol>"><ol class='cell-list'><li>寄送失敗自動告警至 Discord／Slack（v1 不要求即時告警）</li><li>額度接近上限時預警（如達 80%）</li><li>簡易儀表板：當日／當月寄出數與成功率</li><li>IP 反查登入地點，讓信件中顯示的地點欄位更精確</li><li>依風險條件（如新裝置、異地登入）才觸發寄送，而非每次登入都寄</li><li>HTML 範本響應式／閱讀體驗微調</li></ol></td>
+                            </tr>
+                            <tr>
+                                <td><strong data-lang-zh="暫不" data-lang-en="Won’t have">暫不</strong></td>
+                                <td data-lang-zh="<ol class='cell-list'><li>「這不是我」一鍵鎖帳、強制重設密碼</li><li>登入通知同步簡訊、LINE 等多管道</li><li>多語系範本、開信追蹤</li><li>密碼重設信、註冊驗證信等其他帳號信件</li></ol>" data-lang-en="<ol class='cell-list'><li>“This wasn’t me” one-click account lock or forced password reset</li><li>Syncing login notifications to additional channels such as SMS or LINE</li><li>Multi-language templates and open tracking</li><li>Other account emails such as password-reset and signup-verification messages</li></ol>"><ol class='cell-list'><li>「這不是我」一鍵鎖帳、強制重設密碼</li><li>登入通知同步簡訊、LINE 等多管道</li><li>多語系範本、開信追蹤</li><li>密碼重設信、註冊驗證信等其他帳號信件</li></ol></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="note-box">
+                    <strong data-lang-zh="暫不做原因" data-lang-en="Why these are out of scope">暫不做原因</strong>
+                    <ul class="details">
+                        <li data-lang-zh="<strong>「這不是我」後續處置：</strong>一鍵鎖帳及強制重設密碼屬於帳號安全流程，需另接身分驗證與權限系統；本階段先確認登入通知能自動寄出並可追查。" data-lang-en="<strong>“This wasn’t me” follow-up:</strong> One-click lock and forced password reset belong to the account-security workflow and need separate identity and permission systems. This stage first confirms login notifications can be sent automatically and traced."><strong>「這不是我」後續處置：</strong>一鍵鎖帳及強制重設密碼屬於帳號安全流程，需另接身分驗證與權限系統；本階段先確認登入通知能自動寄出並可追查。</li>
+                        <li data-lang-zh="<strong>多管道同步：</strong>簡訊、LINE 需另接通道與維運，工程成本較高；本階段先確認郵件登入通知可行，再評估是否擴充。" data-lang-en="<strong>Multi-channel sync:</strong> SMS and LINE need additional channels and operations, with higher engineering cost. This stage first confirms email login notifications work, then evaluates expansion."><strong>多管道同步：</strong>簡訊、LINE 需另接通道與維運，工程成本較高；本階段先確認郵件登入通知可行，再評估是否擴充。</li>
+                        <li data-lang-zh="<strong>多語系與開信追蹤：</strong>v1 核心是「自動寄出、可查證是否寄信成功」，不是語系覆蓋或開信成效分析；可等核心路徑穩定後再補。" data-lang-en="<strong>Locales and open tracking:</strong> v1 focuses on automatic sending and verifiable delivery—not language coverage or open-rate analysis. Those can wait until the core path is stable."><strong>多語系與開信追蹤：</strong>v1 核心是「自動寄出、可查證是否寄信成功」，不是語系覆蓋或開信成效分析；可等核心路徑穩定後再補。</li>
+                        <li data-lang-zh="<strong>其他帳號信件：</strong>密碼重設、註冊驗證等雖同屬帳號通知，但觸發條件與範本不同；本階段僅先驗證「登入通知」這一條路徑。" data-lang-en="<strong>Other account emails:</strong> Password-reset and signup-verification emails are also account notifications, but they use different triggers and templates. This stage only validates the login-notification path."><strong>其他帳號信件：</strong>密碼重設、註冊驗證等雖同屬帳號通知，但觸發條件與範本不同；本階段僅先驗證「登入通知」這一條路徑。</li>
+                    </ul>
+                </div>
+            </section>
+
+            <!-- 03 技術 PoC -->
+            <section id="stage3" class="timeline-card">
+                <h2 class="stage-title"><span data-lang-zh="技術 PoC" data-lang-en="Tech PoC">技術 PoC</span></h2>
+                <h3 class="subsection-title" data-lang-zh="1. 候選方案" data-lang-en="1. Candidate options">1. 候選方案</h3>
+                <ul class="details">
+                    <li data-lang-zh="<strong>AWS SES</strong>（Simple Email Service）：採雲端基礎設施型郵件 API。優點為用量超過免費方案額度後單位成本較可控；相對地，網域驗證與寄送監控需自行建置與維運。" data-lang-en="<strong>AWS SES</strong> (Simple Email Service): An infrastructure-style email API. Unit cost is more controllable after free-tier limits; domain authentication and delivery monitoring must be built and operated in-house."><strong>AWS SES</strong>（Simple Email Service）：採雲端基礎設施型郵件 API。優點為用量超過免費方案額度後單位成本較可控；相對地，網域驗證與寄送監控需自行建置與維運。</li>
+                    <li data-lang-zh="<strong>SaaS 郵件服務</strong>（本次以 Resend 免費方案實測，亦可替換為同級服務）：採託管型郵件 API。優點為能快速導入、寄送狀態可於後台直接查詢，適合作為概念驗證與快速驗證；相對地，用量超過免費方案額度後單位成本通常高於基礎設施方案，且受供應商額度與條款約束。" data-lang-en="<strong>SaaS email service</strong> (tested on the Resend free tier; interchangeable with an equivalent managed service): A managed email API. Fast to adopt, with send status visible in the admin console—suited to proof-of-concept and quick validation. After free-tier limits, unit cost is usually higher than infrastructure options, and usage is bound by vendor quotas and terms."><strong>SaaS 郵件服務</strong>（本次以 Resend 免費方案實測，亦可替換為同級服務）：採託管型郵件 API。優點為能快速導入、寄送狀態可於後台直接查詢，適合作為概念驗證與快速驗證；相對地，用量超過免費方案額度後單位成本通常高於基礎設施方案，且受供應商額度與條款約束。</li>
+                    <li data-lang-zh="<strong>維持現狀</strong>（不寄送登入通知）：量化目前完全沒有登入通知時的資安風險與稽核缺口，作為基準方案。" data-lang-en="<strong>Status quo</strong> (no login notifications): Quantify the security risk and audit gap of having no login notifications today, as the baseline option."><strong>維持現狀</strong>（不寄送登入通知）：量化目前完全沒有登入通知時的資安風險與稽核缺口，作為基準方案。</li>
+                </ul>
+
+                <h3 class="subsection-title" data-lang-zh="2. 實測紀錄" data-lang-en="2. Test log">2. 實測紀錄</h3>
+                <p class="stage-text" data-lang-zh="對三個候選方案分別進行寄送功能、時效性、可追蹤性、失敗可見性及成本驗證，結果如下。" data-lang-en="Each of the three candidate options was validated for sending, timeliness, traceability, failure visibility, and cost. Results below.">對三個候選方案分別進行寄送功能、時效性、可追蹤性、失敗可見性及成本驗證，結果如下。</p>
+                <div class="table-scroll">
+                    <table class="poc-table poc-table--option-log">
+                        <thead>
+                            <tr>
+                                <th data-lang-zh="方案" data-lang-en="Option">方案</th>
+                                <th data-lang-zh="驗證項目" data-lang-en="Check">驗證項目</th>
+                                <th data-lang-zh="結果" data-lang-en="Result">結果</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr class="option-group-start">
+                                <td rowspan="5"><strong>AWS SES</strong></td>
+                                <td data-lang-zh="環境就緒（Sandbox）" data-lang-en="Environment ready (Sandbox)">環境就緒（Sandbox）</td>
+                                <td data-lang-zh="需先驗證寄件與收件信箱，才能測試寄信功能。" data-lang-en="Sender and recipient emails must be verified before send testing.">需先驗證寄件與收件信箱，才能測試寄信功能。</td>
+                            </tr>
+                            <tr>
+                                <td data-lang-zh="寄送 5 封信件" data-lang-en="Send 5 emails">寄送 5 封信件</td>
+                                <td data-lang-zh="5 封信件皆成功送達，延遲時間約 1 至 3 秒，但落入垃圾郵件資料夾。本測試僅完成信箱驗證、尚未建置完整發送網域認證，故此階段僅能確認「寄得出」，信件送達收件匣有待取得正式網域後再驗證。" data-lang-en="All 5 emails were delivered in about 1–3 seconds, but landed in spam. Only email identity was verified—full sending-domain authentication was not set up—so this stage confirms sendability; inbox placement awaits a production domain.">5 封信件皆成功送達，延遲時間約 1 至 3 秒，但落入垃圾郵件資料夾。本測試僅完成信箱驗證、尚未建置完整發送網域認證，故此階段僅能確認「寄得出」，信件送達收件匣有待取得正式網域後再驗證。</td>
+                            </tr>
+                            <tr>
+                                <td data-lang-zh="導入條件" data-lang-en="Adoption prerequisites">導入條件</td>
+                                <td data-lang-zh="已確認存在轉正式申請入口，但轉為正式寄送前，需先完成「發送網域」驗證。本階段無自有網域，故在測試環境完成寄送與失敗可見性驗證。" data-lang-en="A path to production access exists, but a verified sending domain is required before production sending. With no owned domain in this stage, sending and failure visibility were validated in the test environment.">已確認存在轉正式申請入口，但轉為正式寄送前，需先完成「發送網域」驗證。本階段無自有網域，故在測試環境完成寄送與失敗可見性驗證。</td>
+                            </tr>
+                            <tr>
+                                <td data-lang-zh="可追蹤性及失敗可見性" data-lang-en="Traceability &amp; failure visibility">可追蹤性及失敗可見性</td>
+                                <td data-lang-zh="寄送結果可於監控台查詢，但入口較不明顯，指標與次數需自行挑選、設定後才能對應寄出／送達／退信結果。" data-lang-en="Send results can be queried in the monitoring console, but the entry point is less obvious; metrics and counts must be selected and configured to map send / delivery / bounce outcomes.">寄送結果可於監控台查詢，但入口較不明顯，指標與次數需自行挑選、設定後才能對應寄出／送達／退信結果。</td>
+                            </tr>
+                            <tr class="option-group-end">
+                                <td data-lang-zh="成本（月約 3,000 封）" data-lang-en="Cost (~3,000 emails/month)">成本（月約 3,000 封）</td>
+                                <td data-lang-zh="每 1,000 封約 0.16 美金；月量 3,000 封試算約 0.48 美金。定價參考：<a href='https://aws.amazon.com/ses/pricing/' target='_blank' rel='noopener noreferrer'>aws.amazon.com/ses/pricing</a>" data-lang-en="About USD 0.16 per 1,000 emails; at 3,000 emails/month, roughly USD 0.48. Pricing: <a href='https://aws.amazon.com/ses/pricing/' target='_blank' rel='noopener noreferrer'>aws.amazon.com/ses/pricing</a>">每 1,000 封約 0.16 美金；月量 3,000 封試算約 0.48 美金。定價參考：<a href="https://aws.amazon.com/ses/pricing/" target="_blank" rel="noopener noreferrer">aws.amazon.com/ses/pricing</a></td>
+                            </tr>
+                            <tr class="option-group-start">
+                                <td rowspan="5"><strong data-lang-zh="SaaS（Resend）" data-lang-en="SaaS (Resend)">SaaS（Resend）</strong></td>
+                                <td data-lang-zh="申請免費方案" data-lang-en="Free-tier signup">申請免費方案</td>
+                                <td data-lang-zh="註冊與啟用快速完成，可立即進入寄送測試。" data-lang-en="Signup and activation completed quickly; send testing could start right away.">註冊與啟用快速完成，可立即進入寄送測試。</td>
+                            </tr>
+                            <tr>
+                                <td data-lang-zh="寄送 5 封" data-lang-en="Send 5 emails">寄送 5 封</td>
+                                <td data-lang-zh="5 封信件皆成功送達，延遲時間約 1 至 3 秒，皆落入收件匣中。" data-lang-en="All 5 emails were delivered in about 1–3 seconds and landed in the inbox.">5 封信件皆成功送達，延遲時間約 1 至 3 秒，皆落入收件匣中。</td>
+                            </tr>
+                            <tr>
+                                <td data-lang-zh="導入條件（轉正式）" data-lang-en="Adoption prerequisites (production)">導入條件（轉正式）</td>
+                                <td data-lang-zh="無需另行申請正式權限即可開始驗證；正式環境建議完成發送網域驗證以提升到達率，用量超出免費額度後再升級付費方案。" data-lang-en="No separate production-access request is needed to start validation. For production, verify a sending domain to improve inbox placement, and upgrade when volume exceeds the free tier.">無需另行申請正式權限即可開始驗證；正式環境建議完成發送網域驗證以提升到達率，用量超出免費額度後再升級付費方案。</td>
+                            </tr>
+                            <tr>
+                                <td data-lang-zh="可追蹤性及失敗可見性" data-lang-en="Traceability &amp; failure visibility">可追蹤性及失敗可見性</td>
+                                <td data-lang-zh="寄送結果可至監控台查看，入口明顯。一進入監控台即可直接看到成功或退信狀態，不必自行組指標。" data-lang-en="Send results are easy to find in the monitoring console. Success or bounce status is visible immediately—no need to assemble custom metrics.">寄送結果可至監控台查看，入口明顯。一進入監控台即可直接看到成功或退信狀態，不必自行組指標。</td>
+                            </tr>
+                            <tr class="option-group-end">
+                                <td data-lang-zh="成本（月約 3,000 封）" data-lang-en="Cost (~3,000 emails/month)">成本（月約 3,000 封）</td>
+                                <td data-lang-zh="月量 3,000 封以內免費，超量後進付費方案（付費方案 20 美金起）。定價參考：<a href='https://resend.com/pricing' target='_blank' rel='noopener noreferrer'>resend.com/pricing</a>" data-lang-en="Free within 3,000 emails/month; paid plans start at USD 20 after overage. Pricing: <a href='https://resend.com/pricing' target='_blank' rel='noopener noreferrer'>resend.com/pricing</a>">月量 3,000 封以內免費，超量後進付費方案（付費方案 20 美金起）。定價參考：<a href="https://resend.com/pricing" target="_blank" rel="noopener noreferrer">resend.com/pricing</a></td>
+                            </tr>
+                            <tr class="option-group-start option-group-end">
+                                <td><strong data-lang-zh="維持現狀" data-lang-en="Status quo">維持現狀</strong></td>
+                                <td data-lang-zh="風險與稽核缺口" data-lang-en="Risk and audit gap">風險與稽核缺口</td>
+                                <td data-lang-zh="無寄送成本，但帳號遭盜用或異常登入時，使用者無法第一時間察覺，事後也沒有任何寄送紀錄可供稽核；資安風險雖難以精確換算金額，但成本明確存在。" data-lang-en="No sending cost, but users cannot notice compromised or abnormal logins in time, and there is no send record to audit afterward. The security risk is hard to price exactly, but the cost is real.">無寄送成本，但帳號遭盜用或異常登入時，使用者無法第一時間察覺，事後也沒有任何寄送紀錄可供稽核；資安風險雖難以精確換算金額，但成本明確存在。</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="screenshot-grid screenshot-grid--stack">
+                    <figure class="screenshot-card">
+                        <img src="images/SES_metrics.jpg" alt="AWS SES CloudWatch metrics console" loading="lazy" width="1200" height="750">
+                        <figcaption>
+                            <strong data-lang-zh="AWS SES 監控台" data-lang-en="AWS SES monitoring console">AWS SES 監控台</strong>
+                        </figcaption>
+                    </figure>
+                    <figure class="screenshot-card">
+                        <img src="images/Resend_metrics.jpg" alt="Resend metrics and delivery status console" loading="lazy" width="1200" height="750">
+                        <figcaption>
+                            <strong data-lang-zh="Resend　監控台" data-lang-en="Resend monitoring console">Resend　監控台</strong>
+                        </figcaption>
+                    </figure>
+                </div>
+
+                <h3 class="subsection-title" data-lang-zh="3. 方案對照表" data-lang-en="3. Comparison matrix">3. 方案對照表</h3>
+                <p class="stage-text" data-lang-zh="將以上實測結果整理成方案對照表。" data-lang-en="The test results above are summarized in the comparison matrix below.">將以上實測結果整理成方案對照表。</p>
+                <div class="table-scroll">
+                    <table class="poc-table poc-table--compare">
+                        <thead>
+                            <tr>
+                                <th data-lang-zh="評分維度" data-lang-en="Dimension">評分維度</th>
+                                <th>AWS SES</th>
+                                <th data-lang-zh="SaaS 免費方案" data-lang-en="SaaS free tier">SaaS 免費方案</th>
+                                <th data-lang-zh="維持現狀" data-lang-en="Status quo">維持現狀</th>
+                                <th data-lang-zh="評分依據" data-lang-en="Rationale">評分依據</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><strong data-lang-zh="上手時間" data-lang-en="Time to first send">上手時間</strong></td>
+                                <td data-lang-zh="中低" data-lang-en="Low–medium">中低</td>
+                                <td data-lang-zh="低" data-lang-en="Low">低</td>
+                                <td>—</td>
+                                <td data-lang-zh="依實測所需時間" data-lang-en="Based on measured setup time">依實測所需時間</td>
+                            </tr>
+                            <tr>
+                                <td><strong data-lang-zh="寄送成功率" data-lang-en="Delivery success rate">寄送成功率</strong></td>
+                                <td>100%（5/5）</td>
+                                <td>100%（5/5）</td>
+                                <td data-lang-zh="不適用（未寄送）" data-lang-en="N/A (not sent)">不適用</td>
+                                <td data-lang-zh="小樣本實測" data-lang-en="Small-sample test">小樣本實測</td>
+                            </tr>
+                            <tr>
+                                <td><strong data-lang-zh="失敗可見性" data-lang-en="Failure visibility">失敗可見性</strong></td>
+                                <td data-lang-zh="監控台指標需自建" data-lang-en="Custom metrics required">監控台指標需自建</td>
+                                <td data-lang-zh="監控台直覺" data-lang-en="Intuitive console">監控台直覺</td>
+                                <td data-lang-zh="不適用（無寄送機制）" data-lang-en="N/A (no sending)">不適用</td>
+                                <td data-lang-zh="失敗情境操作體驗" data-lang-en="Failure-scenario walkthrough">失敗情境操作</td>
+                            </tr>
+                            <tr>
+                                <td><strong data-lang-zh="低量成本" data-lang-en="Low-volume cost">低量成本</strong></td>
+                                <td data-lang-zh="0.48 美金" data-lang-en="USD 0.48">0.48 美金</td>
+                                <td data-lang-zh="額度內 $0" data-lang-en="$0 within quota">免費</td>
+                                <td data-lang-zh="無金錢成本，但資安風險成本高" data-lang-en="No cash cost; high security-risk cost">無金錢成本，風險高</td>
+                                <td data-lang-zh="官方定價＋用量估算" data-lang-en="Official pricing + volume estimate">定價＋估算</td>
+                            </tr>
+                            <tr>
+                                <td><strong data-lang-zh="可維運性" data-lang-en="Operability">可維運性</strong></td>
+                                <td data-lang-zh="高" data-lang-en="High">高</td>
+                                <td data-lang-zh="高" data-lang-en="High">高</td>
+                                <td data-lang-zh="不適用（無流程）" data-lang-en="N/A (no process)">不適用</td>
+                                <td data-lang-zh="綜合操作經驗" data-lang-en="Overall ops experience">綜合經驗</td>
+                            </tr>
+                            <tr>
+                                <td><strong data-lang-zh="與自動化相容" data-lang-en="Automation fit">與自動化相容</strong></td>
+                                <td data-lang-zh="API" data-lang-en="API">API</td>
+                                <td data-lang-zh="現成整合／API" data-lang-en="Native integrations / API">現成整合／API</td>
+                                <td data-lang-zh="無法自動化" data-lang-en="Cannot automate">無法</td>
+                                <td data-lang-zh="官方文件" data-lang-en="Official docs">官方文件</td>
+                            </tr>
+                            <tr class="is-highlight">
+                                <td><strong data-lang-zh="初評" data-lang-en="Initial assessment">初評</strong></td>
+                                <td data-lang-zh="<p><strong>優點：</strong>單位成本可控，API 可接自動化</p><p><strong>限制：</strong>網域／監控門檻較高</p><p><strong>建議：</strong>用量成長後再考慮導入，不適合作驗證期首選</p>" data-lang-en="<p><strong>Pros:</strong> Controllable unit cost; API-ready for automation</p><p><strong>Limits:</strong> Higher domain / monitoring barriers</p><p><strong>Recommendation:</strong> Consider after volume grows—not the first choice for validation</p>"><p><strong>優點：</strong>單位成本可控，API 可接自動化</p><p><strong>限制：</strong>網域／監控門檻較高</p><p><strong>建議：</strong>用量成長後再考慮導入，不適合作驗證期首選</p></td>
+                                <td data-lang-zh="<p><strong>優點：</strong>上手快、狀態好查、低用量免費，API／自動化友善</p><p><strong>限制：</strong>用量超過每月 3,000 封後成本較 AWS SES 高</p><p><strong>建議：</strong>驗證期首選</p>" data-lang-en="<p><strong>Pros:</strong> Fast setup, clear status, free at low volume, API-friendly</p><p><strong>Limits:</strong> After 3,000 emails/month, cost is higher than AWS SES</p><p><strong>Recommendation:</strong> Best choice for the validation phase</p>"><p><strong>優點：</strong>上手快、狀態好查、低用量免費，API／自動化友善</p><p><strong>限制：</strong>用量超過每月 3,000 封後成本較 AWS SES 高</p><p><strong>建議：</strong>驗證期首選</p></td>
+                                <td data-lang-zh="<p><strong>優點：</strong>零導入成本，無需任何開發</p><p><strong>限制：</strong>使用者無法察覺異常登入，也無寄送紀錄可稽核，資安風險明確存在</p><p><strong>建議：</strong>僅適合作為導入前的過渡空窗，應盡快改用其他方案補上此缺口</p>" data-lang-en="<p><strong>Pros:</strong> Zero adoption cost; no development needed</p><p><strong>Limits:</strong> Users cannot notice abnormal logins; no send records to audit; clear security risk</p><p><strong>Recommendation:</strong> Only as a brief gap before adoption—close it with another option soon</p>"><p><strong>優點：</strong>零導入成本，無需任何開發</p><p><strong>限制：</strong>使用者無法察覺異常登入，也無寄送紀錄可稽核，資安風險明確存在</p><p><strong>建議：</strong>僅適合作為導入前的過渡空窗，應盡快改用其他方案補上此缺口</p></td>
+                                <td data-lang-zh="綜合上手時間、失敗可見性、成本與自動化相容之實測結果" data-lang-en="Based on measured time-to-first-send, failure visibility, cost, and automation fit">綜合上手時間、失敗可見性、成本與自動化相容之實測結果</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- 04 決策建議 -->
+            <section id="stage4" class="timeline-card">
+                <h2 class="stage-title"><span data-lang-zh="決策建議" data-lang-en="Decision &amp; recommendations">決策建議</span></h2>
+
+                <div class="decision-box">
+                    <p data-lang-zh="<strong>驗證期：</strong>優先採用 SaaS 免費方案，上手快、失敗可見性好，能快速驗證自動化是否真的解決問題。" data-lang-en="<strong>Validation phase:</strong> Prefer the SaaS free tier—fast setup and clear failure visibility to quickly prove whether automation solves the problem."><strong>驗證期：</strong>優先採用 SaaS 免費方案，上手快、失敗可見性好，能快速驗證自動化是否真的解決問題。</p>
+                    <p data-lang-zh="<strong>用量成長期：</strong>評估轉 AWS SES，並提前規劃網域驗證與監控。" data-lang-en="<strong>Growth phase:</strong> Evaluate moving to AWS SES, and plan domain authentication and monitoring ahead of time."><strong>用量成長期：</strong>評估轉 AWS SES，並提前規劃網域驗證與監控。</p>
+                    <p data-lang-zh="<strong>維持現狀（不寄送登入通知）：</strong>僅適合作為導入前的短暫過渡，應盡快完成任一方案的正式導入，避免帳號異常缺乏通知機制的資安風險。" data-lang-en="<strong>Status quo (no login notifications):</strong> Suitable only as a brief transition before adoption. Complete a formal rollout of either option soon to close the security gap of missing alerts for abnormal account activity."><strong>維持現狀（不寄送登入通知）：</strong>僅適合作為導入前的短暫過渡，應盡快完成任一方案的正式導入，避免帳號異常缺乏通知機制的資安風險。</p>
+                </div>
+
+                <h3 class="subsection-title" data-lang-zh="潛在風險" data-lang-en="Risks">潛在風險</h3>
+                <ul class="details">
+                    <li data-lang-zh="<strong>網域驗證可能比預期久：</strong>網域的設定與生效時間不一定順利，正式排程前最好預留緩衝。" data-lang-en="<strong>Domain verification may take longer than expected:</strong> Domain setup and propagation are not always smooth—leave buffer time before a production schedule."><strong>網域驗證可能比預期久：</strong>網域的設定與生效時間不一定順利，正式排程前最好預留緩衝。</li>
+                    <li data-lang-zh="<strong>到達率需要時間驗證：</strong>信件是否被歸類為垃圾信，得觀察一段真實表現才能判斷，5 封測試信的 100% 送達率還不足以下定論。" data-lang-en="<strong>Deliverability needs longer observation:</strong> Whether messages land in spam only becomes clear over real usage—5 test emails at 100% delivery are not enough to conclude."><strong>到達率需要時間驗證：</strong>信件是否被歸類為垃圾信，得觀察一段真實表現才能判斷，5 封測試信的 100% 送達率還不足以下定論。</li>
+                    <li data-lang-zh="<strong>個資與合規要另外留意：</strong>登入通知內容包含登入時間、裝置、地點資訊等個人資料，相關合規條款需要再確認一次。" data-lang-en="<strong>PII and compliance need a separate check:</strong> Login notifications include personal data such as login time, device, and location details. Review related compliance terms—not just features."><strong>個資與合規要另外留意：</strong>登入通知內容包含登入時間、裝置、地點資訊等個人資料，相關合規條款需要再確認一次。</li>
+                </ul>
+
+                <h3 class="subsection-title" data-lang-zh="下一步建議" data-lang-en="Next steps">下一步建議</h3>
+                <ul class="details">
+                    <li data-lang-zh="<strong>失敗告警串接 Discord／Slack：</strong>建立一條自動化工作流程，將寄信失敗通知發送到通訊軟體，讓負責人即時看見問題。" data-lang-en="<strong>Wire failure alerts to Discord / Slack:</strong> Build an automation that posts send failures to a messaging app so owners see issues promptly."><strong>失敗告警串接 Discord／Slack：</strong>建立一條自動化工作流程，將寄信失敗通知發送到通訊軟體，讓負責人即時看見問題。</li>
+                    <li data-lang-zh="<strong>寫一頁發送 SOP：</strong>明定負責人、檢查時間與頻率、突發狀況處理流程等 SOP，確保上線後能明確執行。" data-lang-en="<strong>Write a one-page send SOP:</strong> Define owners, check timing and frequency, and incident handling so the process is clear after go-live."><strong>寫一頁發送 SOP：</strong>明定負責人、檢查時間與頻率、突發狀況處理流程等 SOP，確保上線後能明確執行。</li>
+                    <li data-lang-zh="<strong>準備好轉正式的路徑：</strong>一旦超過預估月量，即切換成合適方案並啟動正式流程、監控串接。" data-lang-en="<strong>Keep a path to production ready:</strong> Once volume exceeds the estimated monthly load, switch to a suitable option and start the production process and monitoring integration."><strong>準備好轉正式的路徑：</strong>一旦超過預估月量，即切換成合適方案並啟動正式流程、監控串接。</li>
+                </ul>
+            </section>
+        </article>
+    </main>
+
+    <footer>
+        <p>© 鄭書涵 Shu-Han Zheng | Personal Portfolio</p>
+    </footer>
+
+    <script src="js/common.js"></script>
+    <script>
+        (function initProjectToc() {
+            const links = Array.from(document.querySelectorAll('.project-toc-label, .project-toc-item > a[href^="#"]'));
+            if (!links.length) return;
+
+            const sections = links
+                .map((link) => document.getElementById(link.getAttribute('href').slice(1)))
+                .filter(Boolean);
+
+            const setActive = (id) => {
+                links.forEach((link) => {
+                    link.classList.toggle('is-active', link.getAttribute('href') === `#${id}`);
+                });
+            };
+
+            const observer = new IntersectionObserver(
+                (entries) => {
+                    const visible = entries
+                        .filter((entry) => entry.isIntersecting)
+                        .sort((a, b) => b.intersectionRatio - a.intersectionRatio);
+                    if (visible[0]) setActive(visible[0].target.id);
+                },
+                { rootMargin: '-20% 0px -55% 0px', threshold: [0, 0.25, 0.5, 1] }
+            );
+
+            sections.forEach((section) => observer.observe(section));
+
+            const bindSmoothScroll = (anchor) => {
+                if (anchor.dataset.tocBound === '1') return;
+                anchor.dataset.tocBound = '1';
+                anchor.addEventListener('click', (e) => {
+                    const href = anchor.getAttribute('href');
+                    if (!href || href === '#') return;
+                    const target = document.getElementById(href.slice(1));
+                    if (!target) return;
+                    e.preventDefault();
+                    target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                });
+            };
+
+            links.forEach(bindSmoothScroll);
+
+            const syncSubtitles = () => {
+                document.querySelectorAll('.project-toc-list > .project-toc-item').forEach((item) => {
+                    const link = item.querySelector(':scope > a[href^="#"]');
+                    if (!link) return;
+
+                    const section = document.getElementById(link.getAttribute('href').slice(1));
+                    const subtitleEls = section
+                        ? Array.from(section.querySelectorAll('.subsection-title, .stage-subtitle'))
+                        : [];
+
+                    let wrap = item.querySelector(':scope > .project-toc-subs-wrap');
+                    if (!subtitleEls.length) {
+                        if (wrap) wrap.remove();
+                        return;
+                    }
+
+                    if (!wrap) {
+                        wrap = document.createElement('div');
+                        wrap.className = 'project-toc-subs-wrap';
+                        const list = document.createElement('ul');
+                        list.className = 'project-toc-subs';
+                        wrap.appendChild(list);
+                        item.appendChild(wrap);
+                    }
+
+                    const list = wrap.querySelector('.project-toc-subs');
+                    list.replaceChildren(
+                        ...subtitleEls.map((el, index) => {
+                            if (!el.id) el.id = `${section.id}-sub-${index + 1}`;
+                            const li = document.createElement('li');
+                            const subLink = document.createElement('a');
+                            subLink.href = `#${el.id}`;
+                            subLink.textContent = el.textContent.trim();
+                            bindSmoothScroll(subLink);
+                            li.appendChild(subLink);
+                            return li;
+                        })
+                    );
+                });
+            };
+
+            syncSubtitles();
+            document.addEventListener('langchange', syncSubtitles);
+        })();
+
+        (function syncScreenshotRowHeights() {
+            const grid = document.querySelector('.screenshot-grid');
+            if (!grid) return;
+
+            const mq = window.matchMedia('(max-width: 768px)');
+
+            const clearHeights = (imgs) => {
+                imgs.forEach((img) => {
+                    img.style.height = '';
+                });
+            };
+
+            const apply = () => {
+                const cards = Array.from(grid.querySelectorAll('.screenshot-card'));
+                const imgs = cards.map((card) => card.querySelector('img')).filter(Boolean);
+                clearHeights(imgs);
+
+                // 直排時維持原始比例，不做等高裁切
+                if (grid.classList.contains('screenshot-grid--stack')) return;
+                if (mq.matches || imgs.length < 2) return;
+                if (imgs.some((img) => !img.complete || img.naturalHeight === 0)) return;
+
+                // 第一列兩張先對齊較矮者，其餘列沿用同一高度
+                const firstRow = imgs.slice(0, 2);
+                const firstRowHeight = Math.min(
+                    ...firstRow.map((img) => img.getBoundingClientRect().height)
+                );
+                if (firstRowHeight <= 0) return;
+
+                imgs.forEach((img) => {
+                    img.style.height = `${firstRowHeight}px`;
+                });
+            };
+
+            const whenReady = () => {
+                const imgs = Array.from(grid.querySelectorAll('img'));
+                Promise.all(
+                    imgs.map(
+                        (img) =>
+                            img.complete
+                                ? Promise.resolve()
+                                : new Promise((resolve) => {
+                                      img.addEventListener('load', resolve, { once: true });
+                                      img.addEventListener('error', resolve, { once: true });
+                                  })
+                    )
+                ).then(apply);
+            };
+
+            whenReady();
+            window.addEventListener('resize', apply);
+            mq.addEventListener('change', apply);
+        })();
+    </script>
+</body>
+</html>

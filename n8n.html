@@ -1,0 +1,636 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="一人從『每天手動追新聞、手動貼文』出發，用 n8n 逐步養成的 AI 情報與內容自動化系統 — 歷經三次迭代，整合 RAG 向量檢索、結構化 Prompt 文案生成與 Threads 自動發文管道">
+    <title>AI 摘要新聞與多渠道內容發布系統 | 鄭書涵 Portfolio</title>
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="css/variables.css">
+    <link rel="stylesheet" href="css/base.css">
+    <link rel="stylesheet" href="css/components.css">
+    <link rel="stylesheet" href="css/project.css">
+
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@type": "CreativeWork",
+        "name": "AI 摘要新聞與多渠道內容發布系統",
+        "author": { "@type": "Person", "name": "鄭書涵 Shu-Han Zheng" },
+        "description": "以 n8n 為核心，歷經三次迭代打造的內容自動化系統：從 NewsAPI 抓取新聞、用 RAG 向量檢索整理成摘要並發送至 Gmail 與 Discord；另以結構化 Prompt 生成品牌與產品向文案，發布至 Threads",
+        "keywords": ["n8n", "OpenAI", "Qdrant", "RAG Pipeline", "Prompt Engineering", "Threads API", "Workflow Automation"]
+    }
+    </script>
+
+    <style>
+        /* 版本演進表格（n8n 專案專用，不影響其他頁面） */
+        .evolution-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 1.2rem 0;
+            font-size: 0.88rem;
+        }
+        .evolution-table th,
+        .evolution-table td {
+            padding: 0.75rem 0.9rem;
+            border: 1px solid var(--border-color);
+            text-align: left;
+            vertical-align: top;
+            line-height: 1.65;
+        }
+        .evolution-table th {
+            background: var(--surface-soft);
+            color: var(--text-level-2);
+            font-weight: 700;
+            font-size: 0.85rem;
+            text-align: center;
+        }
+        .evolution-table td {
+            color: var(--text-level-4);
+        }
+        .evolution-table td strong,
+        .evolution-table th strong {
+            color: var(--text-level-3);
+        }
+        .evolution-table tr.is-current td {
+            background: var(--accent-light);
+        }
+        .evolution-table tr.is-current td:first-child {
+            border-left: 3px solid var(--accent-color);
+        }
+        @media (max-width: 768px) {
+            .evolution-table { font-size: 0.8rem; }
+            .evolution-table th, .evolution-table td { padding: 0.55rem 0.6rem; }
+        }
+        .threads-result-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+            align-items: start;
+        }
+        .threads-result-row img {
+            width: 100%;
+            aspect-ratio: 674 / 805; /* 以 threads2.jpg 原始尺寸為基準 */
+            height: auto;
+            object-fit: cover;
+            object-position: top center;
+            border-radius: 8px;
+            border: 1px solid var(--border-color, #e0e0e0);
+        }
+        @media (max-width: 768px) {
+            .threads-result-row { grid-template-columns: 1fr; }
+        }
+        .hero-actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.75rem;
+            margin-top: 1.2rem;
+        }
+
+        /* 左側大綱：三欄置中，文章在正中，大綱貼在文章左側 */
+        .container--with-toc {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) minmax(0, 960px) minmax(0, 1fr);
+            column-gap: 1.75rem;
+            width: 100%;
+            max-width: none;
+            margin-left: auto;
+            margin-right: auto;
+            padding-left: 1rem;
+            padding-right: 1rem;
+            box-sizing: border-box;
+            align-items: start;
+        }
+        .container--with-toc > .project-toc {
+            grid-column: 1;
+            justify-self: end;
+            width: 100%;
+            max-width: 20rem;
+            position: sticky;
+            top: 5.5rem;
+            max-height: calc(100vh - 6.5rem);
+            overflow-y: auto;
+            padding: 0.85rem 0;
+            text-align: left;
+        }
+        .container--with-toc > article {
+            grid-column: 2;
+            min-width: 0;
+            width: 100%;
+        }
+        .project-toc-label {
+            display: block;
+            margin: 0 0 0.85rem 0;
+            padding: 0;
+            font-size: 0.88rem;
+            font-weight: 800;
+            line-height: 1.35;
+            letter-spacing: 0;
+            text-transform: none;
+            text-align: left;
+            color: var(--text-level-1);
+            text-decoration: none;
+            transition: color 0.2s ease;
+        }
+        .project-toc-label:hover,
+        .project-toc-label.is-active {
+            color: var(--accent-color);
+        }
+        .project-toc-list {
+            list-style: none;
+            margin: 0;
+            padding: 0;
+            text-align: left;
+        }
+        .project-toc-list .project-toc-item > a {
+            display: block;
+            padding: 0.45rem 0;
+            border-left: none;
+            color: var(--text-level-4);
+            text-decoration: none;
+            text-align: left;
+            font-size: 0.95rem;
+            line-height: 1.4;
+            transition: color 0.2s ease;
+        }
+        .project-toc-list .project-toc-item > a:hover {
+            color: var(--accent-color);
+            background: transparent;
+        }
+        .project-toc-list .project-toc-item > a.is-active {
+            color: var(--accent-color);
+            font-weight: 600;
+            background: transparent;
+        }
+        .project-toc-item {
+            margin: 0;
+        }
+        .project-toc-subs-wrap {
+            display: grid;
+            grid-template-rows: 0fr;
+            transition: grid-template-rows 0.28s ease;
+        }
+        .project-toc-item:hover .project-toc-subs-wrap,
+        .project-toc-item:focus-within .project-toc-subs-wrap {
+            grid-template-rows: 1fr;
+        }
+        .project-toc-subs {
+            list-style: none;
+            margin: 0;
+            padding: 0 0 0 0.75rem;
+            overflow: hidden;
+            min-height: 0;
+        }
+        .project-toc-subs li {
+            padding: 0;
+        }
+        .project-toc-subs a {
+            display: block;
+            padding: 0.2rem 0;
+            font-size: 0.82rem;
+            line-height: 1.4;
+            color: var(--text-muted);
+            text-decoration: none;
+            transition: color 0.2s ease;
+        }
+        .project-toc-item:hover .project-toc-subs a,
+        .project-toc-item:focus-within .project-toc-subs a {
+            color: var(--text-level-4);
+        }
+        .project-toc-subs a:hover {
+            color: var(--accent-color);
+        }
+        @media (max-width: 1200px) {
+            .container--with-toc {
+                grid-template-columns: 1fr;
+                max-width: 960px;
+                margin-left: auto;
+                margin-right: auto;
+                column-gap: 0;
+            }
+            .container--with-toc > .project-toc,
+            .container--with-toc > article {
+                grid-column: 1;
+                justify-self: stretch;
+                max-width: none;
+            }
+            .container--with-toc > .project-toc {
+                position: static;
+                max-height: none;
+                overflow: visible;
+                margin-bottom: 0.5rem;
+                padding: 0.75rem 0 0.85rem;
+                border-bottom: 1px solid var(--border-color);
+            }
+            .project-toc-list .project-toc-item > a {
+                font-size: 0.95rem;
+            }
+            .project-toc-label {
+                font-size: 0.88rem;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <header class="header--with-logo">
+        <a href="index.html" class="header-logo">鄭書涵 Shu-Han Zheng</a>
+        <nav class="nav-links" aria-label="主要導覽">
+            <button id="lang-toggle-btn" class="btn-lang" type="button">
+                <i class="fa-solid fa-globe" aria-hidden="true"></i>
+                <span id="lang-text">中文</span>
+            </button>
+        </nav>
+    </header>
+
+    <main class="container container--project container--with-toc">
+        <nav class="project-toc" aria-label="頁面大綱">
+            <a href="#hero" class="project-toc-label" data-lang-zh="AI 摘要新聞與多渠道內容發布系統" data-lang-en="AI News Summarization &amp; Multi-Channel Content Publishing System">AI 摘要新聞與多渠道內容發布系統</a>
+            <ul class="project-toc-list">
+                <li class="project-toc-item"><a href="#stage1" data-lang-zh="專案背景" data-lang-en="Project Context">專案背景</a></li>
+                <li class="project-toc-item"><a href="#stage2" data-lang-zh="系統迭代歷程" data-lang-en="System Iteration Journey">系統迭代歷程</a></li>
+                <li class="project-toc-item"><a href="#stage3" data-lang-zh="核心系統一：RAG 新聞摘要" data-lang-en="Core System 1: RAG News Summarization">核心系統一：RAG 新聞摘要</a></li>
+                <li class="project-toc-item"><a href="#stage4" data-lang-zh="核心系統二：文案生成" data-lang-en="Core System 2: Copy Generation">核心系統二：文案生成</a></li>
+                <li class="project-toc-item"><a href="#stage5" data-lang-zh="核心系統三：Threads 自動發文管道" data-lang-en="Core System 3: Threads Auto-Posting Pipeline">核心系統三：Threads 自動發文管道</a></li>
+                <li class="project-toc-item"><a href="#stage6" data-lang-zh="效率估算" data-lang-en="Efficiency Estimate">效率估算</a></li>
+                <li class="project-toc-item"><a href="#stage7" data-lang-zh="反思與建議" data-lang-en="Reflections &amp; Recommendations">反思與建議</a></li>
+            </ul>
+        </nav>
+        <article>
+            <!-- Hero 區塊 -->
+            <section id="hero" class="hero-project" aria-labelledby="n8n-title">
+                <p class="hero-project-brand" data-lang-zh="工作流程自動化" data-lang-en="Workflow Automation">工作流程自動化</p>
+                <h1 id="n8n-title" data-lang-zh="AI 摘要新聞與多渠道內容發布系統" data-lang-en="AI News Summarization &amp; Multi-Channel Content Publishing System">AI 摘要新聞與多渠道內容發布系統</h1>
+                <p class="hero-project-lead" data-lang-zh="這套系統並非一次到位的設計，而是從每天手動追蹤新聞、手動排版貼文的重複性工作出發，逐步以 n8n 建置而成。" data-lang-en="This system was not designed all at once. It started from the repetitive work of manually tracking news and formatting posts every day, and was built step by step with n8n.">這套系統並非一次到位的設計，而是從每天手動追蹤新聞、手動排版貼文的重複性工作出發，逐步以 n8n 建置而成。</p>
+                <p data-lang-zh="以 n8n 整合 NewsAPI、OpenAI（Embeddings / GPT-4o-mini）、Qdrant 向量資料庫與 Gmail / Discord / Threads API，構成三個互相銜接的子系統：新聞摘要（新聞來源為 NewsAPI，產出發送至 Gmail 與 Discord）、文案生成（產出主要發布至 Threads，以品牌理念與開發歷程為主，偶爾涉及時事議題），以及負責實際發文的 Threads 發文管道。所謂「多渠道」指的是依內容性質發送到不同渠道。過程中經歷三次版本迭代，本頁記錄的是每一步的決策依據與嘗試錯誤過程。" data-lang-en="Built around n8n, it integrates NewsAPI, OpenAI (Embeddings / GPT-4o-mini), the Qdrant vector database, and the Gmail / Discord / Threads APIs into three connected subsystems: news summarization (news from NewsAPI, delivered to Gmail and Discord), copy generation (published mainly to Threads, focused on brand philosophy and development progress, with occasional current-affairs topics), and a Threads posting pipeline for actual publishing. “Multi-channel” means content is routed to different channels by nature, not that one summary is pasted everywhere. The system went through three iterations; this page documents the decisions and trial-and-error behind each step.">以 n8n 整合 NewsAPI、OpenAI（Embeddings / GPT-4o-mini）、Qdrant 向量資料庫與 Gmail / Discord / Threads API，構成三個互相銜接的子系統：新聞摘要（新聞來源為 NewsAPI，產出發送至 Gmail 與 Discord）、文案生成（產出主要發布至 Threads，以品牌理念與開發歷程為主，偶爾涉及時事議題），以及負責實際發文的 Threads 發文管道。所謂「多渠道」指的是依內容性質發送到不同渠道。過程中經歷三次版本迭代，本頁記錄的是每一步的決策依據與嘗試錯誤過程。</p>
+                <div class="tag-group">
+                    <span class="tag">n8n</span>
+                    <span class="tag">RAG</span>
+                    <span class="tag">API</span>
+                    <span class="tag" data-lang-zh="Prompt 優化" data-lang-en="Prompt Engineering">Prompt 優化</span>
+                </div>
+                <div class="hero-actions">
+                    <a class="btn-toggle-auto" href="https://github.com/dearsloth/n8n-news-content-automation" target="_blank" rel="noopener noreferrer">
+                        <i class="fa-brands fa-github" aria-hidden="true"></i>
+                        <span data-lang-zh="查看程式碼（GitHub）" data-lang-en="View code (GitHub)">查看程式碼（GitHub）</span>
+                    </a>
+                </div>
+            </section>
+
+            <!-- 01 專案背景 -->
+            <section id="stage1" class="timeline-card">
+                <h2 class="stage-title"><span data-lang-zh="專案背景" data-lang-en="Project Context">專案背景</span></h2>
+                <ul class="details">
+                    <li data-lang-zh="<strong>核心問題：</strong>每天需以 NewsAPI 查詢、篩選當天與 LLM SaaS 相關的新聞，再手動整理成易讀的摘要，並分別調整排版後發送至 Gmail 與 Discord。另一方面，Threads 帳號的經營則需另外構思品牌理念與開發過程相關的貼文文案，兩項工作性質不同，卻同樣重複且耗時。" data-lang-en="<strong>Core problem:</strong> Every day I had to query NewsAPI, filter that day’s LLM SaaS-related news, manually turn it into a readable summary, then reformat and send it to Gmail and Discord. Separately, running the Threads account required writing post copy about brand philosophy and the development process. The two tasks differ in nature, but both were repetitive and time-consuming."><strong>核心問題：</strong>每天需以 NewsAPI 查詢、篩選當天與 LLM SaaS 相關的新聞，再手動整理成易讀的摘要，並分別調整排版後發送至 Gmail 與 Discord。另一方面，Threads 帳號的經營則需另外構思品牌理念與開發過程相關的貼文文案，兩項工作性質不同，卻同樣重複且耗時。</li>
+                    <li data-lang-zh="<strong>資源分配取捨：</strong>在本專案中，我同時扮演專案發起人、工程師與內容編輯三種角色，難以將大量時間投入重複的 API 整合工作。因此選擇 n8n 這類 Low-Code 工具，將串接介面的心力降到最低，把有限的時間留給更關鍵的判斷：如何撰寫穩定的 Prompt，以及如何清洗資料以避免餵給模型雜訊。" data-lang-en="<strong>Resource trade-off:</strong> On this project I was simultaneously the initiator, engineer, and content editor, so I could not spend large amounts of time on repetitive API integration. I chose a low-code tool like n8n to minimize effort on interface wiring, and reserved limited time for the more critical decisions: how to write stable prompts, and how to clean data so the model was not fed noise."><strong>資源分配取捨：</strong>在本專案中，我同時扮演專案發起人、工程師與內容編輯三種角色，難以將大量時間投入重複的 API 整合工作。因此選擇 n8n 這類 Low-Code 工具，將串接介面的心力降到最低，把有限的時間留給更關鍵的判斷：如何撰寫穩定的 Prompt，以及如何清洗資料以避免餵給模型雜訊。</li>
+                    <li data-lang-zh="<strong>先驗證、再擴大：</strong>本專案並未一開始就投入向量資料庫的建置，而是先以最簡化的版本驗證「LLM 是否能產出堪用的新聞摘要」；確認可行後，才進一步評估是否需要為處理更大量的新聞，擴大規模建置 Qdrant 向量檢索。" data-lang-en="<strong>Validate first, then scale:</strong> This project did not start by building a vector database. I first used the simplest version to verify whether the LLM could produce usable news summaries; only after that proved feasible did I evaluate whether handling a larger news volume justified scaling up with Qdrant vector retrieval."><strong>先驗證、再擴大：</strong>本專案並未一開始就投入向量資料庫的建置，而是先以最簡化的版本驗證「LLM 是否能產出堪用的新聞摘要」；確認可行後，才進一步評估是否需要為處理更大量的新聞，擴大規模建置 Qdrant 向量檢索。</li>
+                </ul>
+            </section>
+
+            <!-- 02 專案演進時間軸 -->
+            <section id="stage2" class="timeline-card">
+                <h2 class="stage-title"><span data-lang-zh="系統迭代歷程" data-lang-en="System Iteration Journey">系統迭代歷程</span></h2>
+                <p class="stage-text" data-lang-zh="下表整理了三個實際留存的工作流版本，每一版的迭代都是回應前一版遇到的具體限制，而非預先設計的架構藍圖。" data-lang-en="The table below summarizes three workflow versions that were actually retained. Each iteration responded to a concrete limitation of the previous version, rather than following a pre-designed architecture blueprint.">下表整理了三個實際留存的工作流版本，每一版的迭代都是回應前一版遇到的具體限制，而非預先設計的架構藍圖。</p>
+
+                <table class="evolution-table">
+                    <thead>
+                        <tr>
+                            <th data-lang-zh="版本" data-lang-en="Version">版本</th>
+                            <th data-lang-zh="資料來源" data-lang-en="Data Source">資料來源</th>
+                            <th data-lang-zh="儲存 / 處理" data-lang-en="Storage / Processing">儲存 / 處理</th>
+                            <th data-lang-zh="發送渠道" data-lang-en="Output Channel">發送渠道</th>
+                            <th data-lang-zh="遇到的限制" data-lang-en="Limitation Encountered">遇到的限制</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td data-lang-zh="v1｜單篇摘要" data-lang-en="v1 — Single-Article Summary">v1｜單篇摘要</td>
+                            <td data-lang-zh="NewsAPI 抓單篇文章" data-lang-en="NewsAPI, one article at a time">NewsAPI 抓單篇文章</td>
+                            <td data-lang-zh="無儲存，AI Agent 即時摘要" data-lang-en="No storage; AI Agent summarizes in real time">無儲存，AI Agent 即時摘要</td>
+                            <td>Gmail</td>
+                            <td data-lang-zh="僅能處理單篇文章，缺乏篩選與去重機制，資料量增加後即無法負荷" data-lang-en="Could only process one article at a time; lacked filtering and deduplication, and could not scale as volume grew">僅能處理單篇文章，缺乏篩選與去重機制，資料量增加後即無法負荷</td>
+                        </tr>
+                        <tr>
+                            <td data-lang-zh="v2｜結構化儲存" data-lang-en="v2 — Structured Storage">v2｜結構化儲存</td>
+                            <td data-lang-zh="Google News RSS，正則解析 XML" data-lang-en="Google News RSS, XML parsed with regex">Google News RSS，正則解析 XML</td>
+                            <td>MySQL</td>
+                            <td data-lang-zh="Gmail" data-lang-en="Gmail">Gmail</td>
+                            <td data-lang-zh="資料雖已留存，但僅止於歸檔，缺乏語意搜尋能力，也無法依主題篩選重點" data-lang-en="Data was persisted, but only as an archive — no semantic search, and no topic-based filtering of key items">資料雖已留存，但僅止於歸檔，缺乏語意搜尋能力，也無法依主題篩選重點</td>
+                        </tr>
+                        <tr class="is-current">
+                            <td data-lang-zh="v3｜RAG 向量系統" data-lang-en="v3 — RAG Vector System">v3｜RAG 向量系統</td>
+                            <td data-lang-zh="NewsAPI 分頁批次抓取" data-lang-en="NewsAPI, paginated batch fetch">NewsAPI 分頁批次抓取</td>
+                            <td data-lang-zh="Qdrant 向量資料庫" data-lang-en="Qdrant vector database">Qdrant 向量資料庫</td>
+                            <td data-lang-zh="Gmail + Discord" data-lang-en="Gmail + Discord">Gmail + Discord</td>
+                            <td data-lang-zh="現階段的取捨：以向量資料庫的維運成本，換取更佳的檢索品質，因此額外建置了自動清理機制" data-lang-en="Current trade-off: accept vector-database operations cost for better retrieval quality, so an auto-cleanup mechanism was added">現階段的取捨：以向量資料庫的維運成本，換取更佳的檢索品質，因此額外建置了自動清理機制</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <h3 class="stage-subtitle" data-lang-zh="版本迭代的關鍵轉折" data-lang-en="Key Turning Points in Iteration">版本迭代的關鍵轉折</h3>
+                <ul class="details">
+                    <li data-lang-zh="<strong>v1 → v2：</strong>v1 系統一次僅能處理單篇文章，無法區分內容的重要性，也無法保留歷史紀錄。因此 v2 改為批次抓取，並將結果存入 MySQL，讓資料至少具備可追溯的儲存基礎。" data-lang-en="<strong>v1 → v2:</strong> v1 could process only one article at a time, could not distinguish content importance, and could not keep history. v2 therefore switched to batch fetching and stored results in MySQL, so data at least had a traceable storage foundation."><strong>v1 → v2：</strong>v1 系統一次僅能處理單篇文章，無法區分內容的重要性，也無法保留歷史紀錄。因此 v2 改為批次抓取，並將結果存入 MySQL，讓資料至少具備可追溯的儲存基礎。</li>
+                    <li data-lang-zh="<strong>v2 的資料來源選擇（RSS vs. API）：</strong>v2 選用 Google News RSS 而非 NewsAPI，主要考量是無需申請金鑰且沒有流量限制，適合用來先驗證「資料能否穩定儲存」這個階段性目標，避免在初期就受限於額度申請或流量控管。" data-lang-en="<strong>v2 data-source choice (RSS vs. API):</strong> v2 used Google News RSS instead of NewsAPI mainly because no API key was required and there were no rate limits — suitable for validating the interim goal of “can data be stored reliably,” without being constrained early by key approval or traffic controls."><strong>v2 的資料來源選擇（RSS vs. API）：</strong>v2 選用 Google News RSS 而非 NewsAPI，主要考量是無需申請金鑰且沒有流量限制，適合用來先驗證「資料能否穩定儲存」這個階段性目標，避免在初期就受限於額度申請或流量控管。</li>
+                    <li data-lang-zh="<strong>v2 → v3：</strong>資料存入 MySQL 之後才發現，真正的問題並非「是否有儲存」，而是「如何從大量存檔中篩選出與主題最相關的內容」。在 MySQL 下使用關鍵字查詢無法達到語意層級的比對，因此決定投入向量資料庫與 Embedding。" data-lang-en="<strong>v2 → v3:</strong> After data was stored in MySQL, it became clear the real issue was not “whether data is stored,” but “how to filter the most topic-relevant content from a large archive.” Keyword queries in MySQL could not reach semantic matching, so I invested in a vector database and embeddings."><strong>v2 → v3：</strong>資料存入 MySQL 之後才發現，真正的問題並非「是否有儲存」，而是「如何從大量存檔中篩選出與主題最相關的內容」。在 MySQL 下使用關鍵字查詢無法達到語意層級的比對，因此決定投入向量資料庫與 Embedding。</li>
+                    <li data-lang-zh="<strong>v3 改回 NewsAPI 的原因：</strong>Google News RSS 回傳的內容僅有標題與簡短描述，連結亦為 Google 轉址網址而非原始新聞來源，資訊量不足以支撐語意檢索所需的內容深度。相對而言，NewsAPI 雖需申請金鑰且有請求限制，但回傳的標題、內容、描述與來源皆已結構化，較適合用於向量化處理。因此 v3 改回採用 NewsAPI，以「需要金鑰、有流量限制」的成本，換取「資料完整度足以支撐語意檢索」的效益。" data-lang-en="<strong>Why v3 switched back to NewsAPI:</strong> Google News RSS returned only titles and short descriptions, and links were Google redirects rather than original sources — not enough depth for semantic retrieval. NewsAPI requires a key and has request limits, but returns structured title, content, description, and source fields better suited to vectorization. v3 therefore returned to NewsAPI, trading key and rate-limit costs for data completeness that can support semantic retrieval."><strong>v3 改回 NewsAPI 的原因：</strong>Google News RSS 回傳的內容僅有標題與簡短描述，連結亦為 Google 轉址網址而非原始新聞來源，資訊量不足以支撐語意檢索所需的內容深度。相對而言，NewsAPI 雖需申請金鑰且有請求限制，但回傳的標題、內容、描述與來源皆已結構化，較適合用於向量化處理。因此 v3 改回採用 NewsAPI，以「需要金鑰、有流量限制」的成本，換取「資料完整度足以支撐語意檢索」的效益。</li>
+                </ul>
+            </section>
+
+            <!-- 03 核心系統一：RAG 新聞摘要 -->
+            <section id="stage3" class="timeline-card">
+                <h2 class="stage-title"><span data-lang-zh="核心系統一：RAG 新聞摘要" data-lang-en="Core System 1: RAG News Summarization">核心系統一：RAG 新聞摘要</span></h2>
+                <p class="stage-text" data-lang-zh="這是每日定時排程執行的模組，負責將 NewsAPI 取得的大量新聞整理成可直接閱讀的摘要。以下幾項設計決策值得特別說明，每一項背後都有具體的考量依據，而非單純的技術選型偏好。" data-lang-en="This module runs on a daily schedule and turns the large volume of news from NewsAPI into summaries that can be read directly. Several design decisions below are worth calling out; each has a concrete rationale, not merely a preference for a particular tech stack.">這是每日定時排程執行的模組，負責將 NewsAPI 取得的大量新聞整理成可直接閱讀的摘要。以下幾項設計決策值得特別說明，每一項背後都有具體的考量依據，而非單純的技術選型偏好。</p>
+
+                <h3 class="stage-subtitle" data-lang-zh="1. 分頁批次抓取，而非單次拉取" data-lang-en="1. Paginated Batch Fetching, Not a Single Pull">1. 分頁批次抓取，而非單次拉取</h3>
+                <p class="stage-text" data-lang-zh="將 NewsAPI 的抓取拆分為多頁、每批 10 筆寫入 Qdrant，而非一次將數百篇文章送入單一請求。這樣的設計主要是為了避免觸及 API 的流量限制，同時使失敗處理更有效率（單一批次失敗時只需重跑該批，而不必重啟整個流程）。" data-lang-en="NewsAPI fetching is split across multiple pages, writing 10 records per batch into Qdrant, instead of sending hundreds of articles in one request. The main goal is to avoid API rate limits, while also making failure handling more efficient (if one batch fails, only that batch needs to be rerun, not the whole pipeline).">將 NewsAPI 的抓取拆分為多頁、每批 10 筆寫入 Qdrant，而非一次將數百篇文章送入單一請求。這樣的設計主要是為了避免觸及 API 的流量限制，同時使失敗處理更有效率（單一批次失敗時只需重跑該批，而不必重啟整個流程）。</p>
+
+                <h3 class="stage-subtitle" data-lang-zh="2. Embedding 模型的選擇與轉換" data-lang-en="2. Embedding Model Choice and Switch">2. Embedding 模型的選擇與轉換</h3>
+                <ul class="details">
+                    <li data-lang-zh="<strong>先以免費方案驗證：</strong>在原型階段，先採用 Hugging Face 的 <code>all-MiniLM-L6-v2</code>（384 維），以零成本方式驗證向量檢索這個方向的可行性。" data-lang-en="<strong>Validate with a free option first:</strong> In the prototype stage I used Hugging Face’s <code>all-MiniLM-L6-v2</code> (384 dimensions) as a zero-cost way to verify whether vector retrieval was a viable direction."><strong>先以免費方案驗證：</strong>在原型階段，先採用 Hugging Face 的 <code>all-MiniLM-L6-v2</code>（384 維），以零成本方式驗證向量檢索這個方向的可行性。</li>
+                    <li data-lang-zh="<strong>確認可行後才改用付費方案：</strong>正式版改採 OpenAI 的 <code>text-embedding-ada-002</code>（1536 維），Qdrant collection 也隨之以 1536 維重新建立。主因不是單純追求更高維度，而是 GPT-4o-mini 摘要環節本來就要用 OpenAI API 金鑰；Embedding 一併改為 OpenAI，可減少維護 Hugging Face 免費額度與可用性風險，使整條流程集中於單一供應商，維運更單純。" data-lang-en="<strong>Switch to a paid option only after validation:</strong> The production version moved to OpenAI’s <code>text-embedding-ada-002</code> (1536 dimensions), and the Qdrant collection was rebuilt at 1536 dimensions. The main reason was not higher dimensionality alone: the GPT-4o-mini summarization step already required an OpenAI API key. Moving embeddings to OpenAI as well reduced the risk of managing Hugging Face free quotas and availability, consolidated the pipeline under one vendor, and simplified operations."><strong>確認可行後才改用付費方案：</strong>正式版改採 OpenAI 的 <code>text-embedding-ada-002</code>（1536 維），Qdrant collection 也隨之以 1536 維重新建立。主因不是單純追求更高維度，而是 GPT-4o-mini 摘要環節本來就要用 OpenAI API 金鑰；Embedding 一併改為 OpenAI，可減少維護 Hugging Face 免費額度與可用性風險，使整條流程集中於單一供應商，維運更單純。</li>
+                </ul>
+
+                <h3 class="stage-subtitle" data-lang-zh="3. 語意檢索與資料清洗" data-lang-en="3. Semantic Retrieval &amp; Data Cleaning">3. 語意檢索與資料清洗</h3>
+                <p class="stage-text" data-lang-zh="以當日主題的 Embedding 對 Qdrant 執行 Top 20 相似度搜尋，取回最相關的新聞片段後，再清除常見雜訊，包括新聞截斷符號、API 內容中常夾帶的固定字串（如 Learn More），以及多餘的換行與空白。這個步驟直接決定了 LLM 摘要內容的品質，未經清洗的原始資料會使摘要品質下降，這也驗證了「垃圾進、垃圾出」的原則。" data-lang-en="Using the day’s topic embedding, the workflow runs a Top-20 similarity search against Qdrant, then cleans common noise from the retrieved snippets — truncation markers, fixed boilerplate often embedded in API content (such as “Learn More”), and excess line breaks and whitespace. This step directly determines LLM summary quality: uncleaned raw data lowers summary quality, confirming the “garbage in, garbage out” principle.">以當日主題的 Embedding 對 Qdrant 執行 Top 20 相似度搜尋，取回最相關的新聞片段後，再清除常見雜訊，包括新聞截斷符號、API 內容中常夾帶的固定字串（如 Learn More），以及多餘的換行與空白。這個步驟直接決定了 LLM 摘要內容的品質，未經清洗的原始資料會使摘要品質下降，這也驗證了「垃圾進、垃圾出」的原則。</p>
+
+                <h3 class="stage-subtitle" data-lang-zh="4. 同一份資料，兩種輸出格式" data-lang-en="4. Same Data, Two Output Formats">4. 同一份資料，兩種輸出格式</h3>
+                <p class="stage-text" data-lang-zh="清洗後的新聞內容會同時輸入兩組不同的 Prompt：Email 版本要求 GPT-4o-mini 先撰寫一段不超過 100 字的中文趨勢摘要，再輸出為 HTML 表格（來源、標題、摘要、連結）；Discord 版本則要求更精簡的純文字段落，以利在聊天頻道中快速閱讀。將同一份資料依渠道拆分為兩種輸出格式，是因為單一內容格式難以同時滿足不同的閱讀情境。" data-lang-en="The cleaned news content is fed into two different prompts: the email version asks GPT-4o-mini to write a Chinese trend summary of no more than 100 characters, then output an HTML table (source, title, summary, link); the Discord version asks for a more concise plain-text paragraph for quick reading in a chat channel. Splitting one dataset into two channel-specific formats reflects that a single content format cannot serve different reading contexts equally well.">清洗後的新聞內容會同時輸入兩組不同的 Prompt：Email 版本要求 GPT-4o-mini 先撰寫一段不超過 100 字的中文趨勢摘要，再輸出為 HTML 表格（來源、標題、摘要、連結）；Discord 版本則要求更精簡的純文字段落，以利在聊天頻道中快速閱讀。將同一份資料依渠道拆分為兩種輸出格式，是因為單一內容格式難以同時滿足不同的閱讀情境。</p>
+
+                <h3 class="stage-subtitle" data-lang-zh="5. 向量庫的自我清理機制" data-lang-en="5. Self-Clearing Vector Store">5. 向量庫的自我清理機制</h3>
+                <p class="stage-text" data-lang-zh="Gmail 與 Discord 兩個渠道皆成功發送完成後，工作流會自動呼叫 Qdrant 的刪除 API，清空當天寫入的所有向量資料。這是因為系統的定位是提供「每日新聞」，不需要長期累積歷史向量；保持向量庫輕量化，也減少了一項需要持續維護的項目。" data-lang-en="After both Gmail and Discord have sent successfully, the workflow automatically calls Qdrant’s delete API to clear all vectors written that day. The system is positioned for “daily news,” so long-term historical vectors are unnecessary; keeping the vector store lightweight also removes one ongoing maintenance item.">Gmail 與 Discord 兩個渠道皆成功發送完成後，工作流會自動呼叫 Qdrant 的刪除 API，清空當天寫入的所有向量資料。這是因為系統的定位是提供「每日新聞」，不需要長期累積歷史向量；保持向量庫輕量化，也減少了一項需要持續維護的項目。</p>
+
+                <div class="project-image-container" style="margin: 20px 0; text-align: center;">
+                    <img src="images/rag.png" alt="n8n 向量 RAG 工作流截圖" style="max-width: 100%; height: auto; border-radius: 8px; border: 1px solid var(--border-color, #e0e0e0);">
+                    <p class="image-caption" style="font-size: 0.9em; color: #666; margin-top: 8px;" data-lang-zh="n8n 向量 RAG 工作流截圖" data-lang-en="n8n vector RAG workflow screenshot">n8n 向量 RAG 工作流截圖</p>
+                </div>
+
+                <h3 class="stage-subtitle" data-lang-zh="工作流執行路徑" data-lang-en="Workflow Execution Path">工作流執行路徑</h3>
+                <div class="workflow-diagram">
+                    <div class="workflow-step">
+                        <span class="workflow-step-num">1</span>
+                        <span class="workflow-step-text" data-lang-zh="<strong>設定與分頁抓取：</strong> Schedule Trigger ➔ Edit Fields (Set Config) ➔ Code (Generate Page Index) ➔ Loop Over Pages (splitInBatches) ➔ HTTP Request (Fetch News) ➔ Code (Format Articles) ➔ IF (Empty Page)" data-lang-en="<strong>Setup &amp; paginated fetch:</strong> Schedule Trigger ➔ Edit Fields (Set Config) ➔ Code (Generate Page Index) ➔ Loop Over Pages (splitInBatches) ➔ HTTP Request (Fetch News) ➔ Code (Format Articles) ➔ IF (Empty Page)"><strong>設定與分頁抓取：</strong> Schedule Trigger ➔ Edit Fields (Set Config) ➔ Code (Generate Page Index) ➔ Loop Over Pages (splitInBatches) ➔ HTTP Request (Fetch News) ➔ Code (Format Articles) ➔ IF (Empty Page)</span>
+                    </div>
+                    <div class="workflow-arrow">↓</div>
+                    <div class="workflow-step">
+                        <span class="workflow-step-num">2</span>
+                        <span class="workflow-step-text" data-lang-zh="<strong>向量化與寫入（每頁一輪，寫完回 Loop）：</strong> HTTP Request (Embed Articles with OpenAI) ➔ Code (Pair Articles + Pack Points) ➔ IF (Has Points to Insert) ➔ HTTP Request (Insert to Qdrant) ➔ 回 Loop Over Pages" data-lang-en="<strong>Embed &amp; write (one page per loop, then return to Loop):</strong> HTTP Request (Embed Articles with OpenAI) ➔ Code (Pair Articles + Pack Points) ➔ IF (Has Points to Insert) ➔ HTTP Request (Insert to Qdrant) ➔ back to Loop Over Pages"><strong>向量化與寫入（每頁一輪，寫完回 Loop）：</strong> HTTP Request (Embed Articles with OpenAI) ➔ Code (Pair Articles + Pack Points) ➔ IF (Has Points to Insert) ➔ HTTP Request (Insert to Qdrant) ➔ 回 Loop Over Pages</span>
+                    </div>
+                    <div class="workflow-arrow">↓</div>
+                    <div class="workflow-step">
+                        <span class="workflow-step-num">3</span>
+                        <span class="workflow-step-text" data-lang-zh="<strong>檢索、清洗與雙渠道分發（全部頁面完成後）：</strong> Code (Prepare Search from Config.query) ➔ HTTP Request (Embed Query with OpenAI) ➔ Qdrant Top-20 Search ➔ Code (Format + Clean) ➔ LLM Summary (for Discord) / LLM Summary (for Email) ➔ Discord / Gmail" data-lang-en="<strong>Retrieve, clean &amp; dual-channel delivery (after all pages finish):</strong> Code (Prepare Search from Config.query) ➔ HTTP Request (Embed Query with OpenAI) ➔ Qdrant Top-20 Search ➔ Code (Format + Clean) ➔ LLM Summary (for Discord) / LLM Summary (for Email) ➔ Discord / Gmail"><strong>檢索、清洗與雙渠道分發（全部頁面完成後）：</strong> Code (Prepare Search from Config.query) ➔ HTTP Request (Embed Query with OpenAI) ➔ Qdrant Top-20 Search ➔ Code (Format + Clean) ➔ LLM Summary (for Discord) / LLM Summary (for Email) ➔ Discord / Gmail</span>
+                    </div>
+                    <div class="workflow-arrow">↓</div>
+                    <div class="workflow-step">
+                        <span class="workflow-step-num">4</span>
+                        <span class="workflow-step-text" data-lang-zh="<strong>兩邊成功才清空：</strong> Mark Discord / Gmail Result ➔ Merge (Both Channels Done) ➔ Code (Check Both Channels OK) ➔ IF (Both Channels Succeeded) ➔ Delete All from Qdrant（否則 Keep Vectors）" data-lang-en="<strong>Clear only when both succeed:</strong> Mark Discord / Gmail Result ➔ Merge (Both Channels Done) ➔ Code (Check Both Channels OK) ➔ IF (Both Channels Succeeded) ➔ Delete All from Qdrant (otherwise Keep Vectors)"><strong>兩邊成功才清空：</strong> Mark Discord / Gmail Result ➔ Merge (Both Channels Done) ➔ Code (Check Both Channels OK) ➔ IF (Both Channels Succeeded) ➔ Delete All from Qdrant（否則 Keep Vectors）</span>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 04 核心系統二：文案生成 -->
+            <section id="stage4" class="timeline-card">
+                <h2 class="stage-title"><span data-lang-zh="核心系統二：文案生成" data-lang-en="Core System 2: Copy Generation">核心系統二：文案生成</span></h2>
+                <p class="stage-text" data-lang-zh="這個模組最初是為了解決每日構思貼文文案的重複性負擔，開發過程中卻成為我投入最多心力的部分，因為它要求我以產品思維去定義「這個 AI 帳號該傳達什麼內容、以何種方式表達」，而非單純交由 AI 生成文字。這裡的產出主要供 Threads 帳號經營使用，內容以品牌理念與開發歷程為主，並非系統產出的新聞摘要。" data-lang-en="This module began as a way to reduce the repetitive burden of drafting post copy every day, but it became the part I invested the most effort in during development, because it required product thinking: defining what this AI account should communicate and how — not simply handing text generation to an AI. Its output is mainly for running the Threads account — brand philosophy and development progress — not the news summaries from Core System 1.">這個模組最初是為了解決每日構思貼文文案的重複性負擔，開發過程中卻成為我投入最多心力的部分，因為它要求我以產品思維去定義「這個 AI 帳號該傳達什麼內容、以何種方式表達」，而非單純交由 AI 生成文字。這裡的產出主要供 Threads 帳號經營使用，內容以品牌理念與開發歷程為主，並非系統產出的新聞摘要。</p>
+
+                <h3 class="stage-subtitle" data-lang-zh="1. 結構化 Prompt" data-lang-en="1. Structured Prompt">1. 結構化 Prompt</h3>
+                <p class="stage-text" data-lang-zh="Prompt 拆分為 Task、Context、Personality、Rules、Input-Output Schema 與多組自定義的範例六個區塊，明確要求輸出必須為可解析的 JSON 陣列（欄位固定為 Topic、Title、Description，並限制字數區間）。初期未定義明確規格時，AI 經常在輸出中額外附加「以上是我為您整理的內容」等文字，導致後續節點解析失敗；規格明確定義後，輸出穩定度才足以支撐自動化流程，不需要人工逐一審閱即可發布。" data-lang-en="The prompt is split into six blocks — Task, Context, Personality, Rules, Input-Output Schema, and several custom examples — and explicitly requires a parseable JSON array (fixed fields Topic, Title, Description, with length constraints). Early on, without a clear spec, the AI often appended phrases like “here is what I prepared for you,” which broke downstream parsing. After the spec was locked down, output stability became reliable enough for automation, without needing a human to review every post before publishing.">Prompt 拆分為 Task、Context、Personality、Rules、Input-Output Schema 與多組自定義的範例六個區塊，明確要求輸出必須為可解析的 JSON 陣列（欄位固定為 Topic、Title、Description，並限制字數區間）。初期未定義明確規格時，AI 經常在輸出中額外附加「以上是我為您整理的內容」等文字，導致後續節點解析失敗；規格明確定義後，輸出穩定度才足以支撐自動化流程，不需要人工逐一審閱即可發布。</p>
+
+                <h3 class="stage-subtitle" data-lang-zh="2. 內容去重" data-lang-en="2. Content Deduplication">2. 內容去重</h3>
+                <p class="stage-text" data-lang-zh="每次產生新貼文前，工作流會先從 Google Sheets 讀取最近 18 篇既有貼文的標題與摘要，濃縮成一段摘要字串，作為 Prompt 輸入的一部分，並明確要求新輸出不得與該清單重複或進行同義改寫。若無此檢查機制，AI 容易在不同日期產出語意相近的內容，對於需要長期經營的帳號而言，反覆出現重複內容是產出品質不佳的明顯徵兆。" data-lang-en="Before generating a new post, the workflow reads the titles and summaries of the latest 18 posts from Google Sheets, condenses them into a summary string as part of the prompt input, and explicitly requires that new output must not repeat or paraphrase that list. Without this check, the AI easily produces semantically similar content across different days; for an account meant to run long-term, repeated near-duplicates are a clear sign of poor output quality.">每次產生新貼文前，工作流會先從 Google Sheets 讀取最近 18 篇既有貼文的標題與摘要，濃縮成一段摘要字串，作為 Prompt 輸入的一部分，並明確要求新輸出不得與該清單重複或進行同義改寫。若無此檢查機制，AI 容易在不同日期產出語意相近的內容，對於需要長期經營的帳號而言，反覆出現重複內容是產出品質不佳的明顯徵兆。</p>
+
+                <h3 class="stage-subtitle" data-lang-zh="3. 兩種人設經營" data-lang-en="3. Two Persona Strategies">3. 兩種人設經營</h3>
+                <div class="stakeholder-grid">
+                    <div class="stakeholder-card">
+                        <div class="stakeholder-icon"><i class="fa-solid fa-face-laugh" aria-hidden="true"></i></div>
+                        <h4 data-lang-zh="生活觀察版人設" data-lang-en="Life-observation persona">生活觀察版人設</h4>
+                        <p class="stakeholder-role" data-lang-zh="生活 / 職場話題・輕鬆幽默" data-lang-en="Life &amp; work topics · light humor">生活 / 職場話題・輕鬆幽默</p>
+                        <p data-lang-zh="以自我調侃、帶有同理心的語氣，描述工作與生活中真實可能發生的情境，目的是拉近與讀者的距離；內容不強調「解決方案」，而是著重於「這件事確實會發生」的共鳴。" data-lang-en="Uses a self-deprecating, empathetic tone to describe situations that can realistically happen at work and in life, aiming to close the distance with readers. The content does not emphasize “solutions,” but the shared feeling that “this really does happen.”">以自我調侃、帶有同理心的語氣，描述工作與生活中真實可能發生的情境，目的是拉近與讀者的距離；內容不強調「解決方案」，而是著重於「這件事確實會發生」的共鳴。</p>
+                    </div>
+                    <div class="stakeholder-card">
+                        <div class="stakeholder-icon"><i class="fa-solid fa-comments" aria-hidden="true"></i></div>
+                        <h4 data-lang-zh="產品分享版人設" data-lang-en="Product-sharing persona">產品分享版人設</h4>
+                        <p class="stakeholder-role" data-lang-zh="產品理念 / 進度分享・溫暖真誠" data-lang-en="Product philosophy &amp; progress · warm and sincere">產品理念 / 進度分享・溫暖真誠</p>
+                        <p data-lang-zh="以「產品開發中」的視角分享理念與進度，並於結尾適度提問以引導互動，避免呈現廣告式語氣，更接近團隊與使用者分享近況的溝通方式。" data-lang-en="Shares philosophy and progress from a “product in development” perspective, ending with a light question to invite interaction. It avoids an ad-like tone and stays closer to how a team updates users on where things stand.">以「產品開發中」的視角分享理念與進度，並於結尾適度提問以引導互動，避免呈現廣告式語氣，更接近團隊與使用者分享近況的溝通方式。</p>
+                    </div>
+                </div>
+                <p class="stage-text" style="margin-top: 0.9rem;" data-lang-zh="兩種人設共用同一套生成邏輯（讀取歷史紀錄 → 去重 → 結構化輸出），僅需更換 Topic 與 Style 參數即可切換。這代表此框架具備可重用性，若要建立新帳號或新語氣，不需要重新撰寫整個工作流。" data-lang-en="Both personas share the same generation logic (read history → deduplicate → structured output); only the Topic and Style parameters need to change. That means the framework is reusable: a new account or new voice does not require rewriting the whole workflow.">兩種人設共用同一套生成邏輯（讀取歷史紀錄 → 去重 → 結構化輸出），僅需更換 Topic 與 Style 參數即可切換。這代表此框架具備可重用性，若要建立新帳號或新語氣，不需要重新撰寫整個工作流。</p>
+
+                <h3 class="stage-subtitle" data-lang-zh="4. 讓內容跟著產品文件走" data-lang-en="4. Let Content Follow the Product Document">4. 讓內容跟著產品文件走</h3>
+                <p class="stage-text" data-lang-zh="產品分享版有一項較為特別的設計：直接讀取 Google Sheets 上的 PRD 文件（欄位包含 User Story、Function Name、AC），將這些內容組合為文字後輸入 Prompt，使 AI 依照「目前實際開發中的功能」撰寫貼文，而非憑主觀判斷發布產品訊息。這解決了內容行銷中常見的問題——內容團隊的對外訊息與開發團隊的實際進度脫節。將 PRD 作為內容生成的輸入來源，使對外溝通得以自動貼合產品開發的節奏。" data-lang-en="The product-sharing persona has a distinctive design: it reads the PRD directly from Google Sheets (fields include User Story, Function Name, and AC), combines them into text for the prompt, and has the AI write posts based on features currently in development — not on subjective product messaging. This addresses a common content-marketing problem: external messaging drifting away from actual engineering progress. Using the PRD as the generation input lets external communication automatically follow the product development cadence.">產品分享版有一項較為特別的設計：直接讀取 Google Sheets 上的 PRD 文件（欄位包含 User Story、Function Name、AC），將這些內容組合為文字後輸入 Prompt，使 AI 依照「目前實際開發中的功能」撰寫貼文，而非憑主觀判斷發布產品訊息。這解決了內容行銷中常見的問題——內容團隊的對外訊息與開發團隊的實際進度脫節。將 PRD 作為內容生成的輸入來源，使對外溝通得以自動貼合產品開發的節奏。</p>
+
+                <div class="project-image-container" style="margin: 20px 0; text-align: center;">
+                    <img src="images/generate_post_life.png" alt="n8n 文案生成工作流截圖（生活觀察版）" style="max-width: 100%; height: auto; border-radius: 8px; border: 1px solid var(--border-color, #e0e0e0);">
+                    <p class="image-caption" style="font-size: 0.9em; color: #666; margin-top: 8px;" data-lang-zh="n8n 文案生成工作流截圖（生活觀察版）" data-lang-en="n8n copy-generation workflow screenshot (life-observation persona)">n8n 文案生成工作流截圖（生活觀察版）</p>
+                </div>
+                <div class="project-image-container" style="margin: 20px 0; text-align: center;">
+                    <img src="images/generate_post_product.png" alt="n8n 文案生成工作流截圖（產品分享版）" style="max-width: 100%; height: auto; border-radius: 8px; border: 1px solid var(--border-color, #e0e0e0);">
+                    <p class="image-caption" style="font-size: 0.9em; color: #666; margin-top: 8px;" data-lang-zh="n8n 文案生成工作流截圖（產品分享版）" data-lang-en="n8n copy-generation workflow screenshot (product-sharing persona)">n8n 文案生成工作流截圖（產品分享版）</p>
+                    <p style="font-size: 0.8em; color: #888; margin-top: 4px; text-align: left;" data-lang-zh="*補充：兩種人設共用同一套生成邏輯，拆成兩條工作流各自排程；產品分享版多讀取 PRD，其餘節點相同。" data-lang-en="*Note: Both personas share the same generation logic and run as two separately scheduled workflows; the product-sharing version adds a PRD read step, with the remaining nodes identical.">*補充：兩種人設共用同一套生成邏輯，拆成兩條工作流各自排程；產品分享版多讀取 PRD，其餘節點相同。</p>
+                </div>
+
+                <h3 class="stage-subtitle" data-lang-zh="工作流執行路徑" data-lang-en="Workflow Execution Path">工作流執行路徑</h3>
+                <div class="workflow-diagram">
+                    <div class="workflow-step">
+                        <span class="workflow-step-num">1</span>
+                        <span class="workflow-step-text" data-lang-zh="<strong>設定與讀取內容庫：</strong> Schedule Trigger ➔ Edit Fields (Set Config) ➔ Code (Resolve Persona Account) ➔ Read Google Sheets (Posts)" data-lang-en="<strong>Setup &amp; read content library:</strong> Schedule Trigger ➔ Edit Fields (Set Config) ➔ Code (Resolve Persona Account) ➔ Read Google Sheets (Posts)"><strong>設定與讀取內容庫：</strong> Schedule Trigger ➔ Edit Fields (Set Config) ➔ Code (Resolve Persona Account) ➔ Read Google Sheets (Posts)</span>
+                    </div>
+                    <div class="workflow-arrow">↓</div>
+                    <div class="workflow-step">
+                        <span class="workflow-step-num">2</span>
+                        <span class="workflow-step-text" data-lang-zh="<strong>歷史去重：</strong> Code (Build Existing Summary)（取最近 18 篇濃縮為 existingSummary）" data-lang-en="<strong>History deduplication:</strong> Code (Build Existing Summary) (condense the latest 18 posts into existingSummary)"><strong>歷史去重：</strong> Code (Build Existing Summary)（取最近 18 篇濃縮為 existingSummary）</span>
+                    </div>
+                    <div class="workflow-arrow">↓</div>
+                    <div class="workflow-step">
+                        <span class="workflow-step-num">3</span>
+                        <span class="workflow-step-text" data-lang-zh="<strong>人設差異：</strong> 生活觀察版直接進入 Prompt；產品分享版先 Read Google Sheets (PRD) ➔ Code (Build PRD Text)，再進入 Prompt" data-lang-en="<strong>Persona difference:</strong> the life-observation version goes straight into the prompt; the product-sharing version first runs Read Google Sheets (PRD) ➔ Code (Build PRD Text), then enters the prompt"><strong>人設差異：</strong> 生活觀察版直接進入 Prompt；產品分享版先 Read Google Sheets (PRD) ➔ Code (Build PRD Text)，再進入 Prompt</span>
+                    </div>
+                    <div class="workflow-arrow">↓</div>
+                    <div class="workflow-step">
+                        <span class="workflow-step-num">4</span>
+                        <span class="workflow-step-text" data-lang-zh="<strong>生成、解析與入庫：</strong> OpenAI (Life / Product Persona) ➔ Code (Parse OpenAI JSON) ➔ IF (Valid Post to Append) ➔ Append Google Sheets（僅寫入有效貼文）" data-lang-en="<strong>Generate, parse &amp; store:</strong> OpenAI (Life / Product Persona) ➔ Code (Parse OpenAI JSON) ➔ IF (Valid Post to Append) ➔ Append Google Sheets (write valid posts only)"><strong>生成、解析與入庫：</strong> OpenAI (Life / Product Persona) ➔ Code (Parse OpenAI JSON) ➔ IF (Valid Post to Append) ➔ Append Google Sheets（僅寫入有效貼文）</span>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 05 核心系統三：Threads 自動發文管道 -->
+            <section id="stage5" class="timeline-card">
+                <h2 class="stage-title"><span data-lang-zh="核心系統三：Threads 自動發文管道" data-lang-en="Core System 3: Threads Auto-Posting Pipeline">核心系統三：Threads 自動發文管道</span></h2>
+                <p class="stage-text" data-lang-zh="本模組發布的是系統二寫入 Google Sheets 的貼文（品牌理念與開發歷程為主，偶爾涉及時事議題），而非系統一的 RAG 新聞摘要。負責從 Google Sheets 讀取尚未發布的貼文，呼叫 Threads Graph API 完成發布，並在成功後回寫發布狀態。" data-lang-en="This module publishes posts that Core System 2 writes to Google Sheets — mainly brand philosophy and development progress, with occasional current-affairs topics — not the RAG news summaries from Core System 1. It reads unpublished posts from Google Sheets, calls the Threads Graph API to publish them, and writes back the publish status after each success.">本模組發布的是系統二寫入 Google Sheets 的貼文（品牌理念與開發歷程為主，偶爾涉及時事議題），而非系統一的 RAG 新聞摘要。負責從 Google Sheets 讀取尚未發布的貼文，呼叫 Threads Graph API 完成發布，並在成功後回寫發布狀態。</p>
+
+                <h3 class="stage-subtitle" data-lang-zh="1. 每次只發一篇" data-lang-en="1. One Post Per Run">1. 每次只發一篇</h3>
+                <p class="stage-text" data-lang-zh="從 Google Sheets 讀取尚未發布的貼文後，先依列序排序，再以每次只取出一篇方式發文。這樣可控制發文節奏，避免一次排程連續發布多則，帳號在短時間內出現大量貼文。" data-lang-en="After reading unpublished posts from Google Sheets, the workflow sorts them by row order and publishes only one post per run. This keeps the posting pace under control and prevents a single schedule run from publishing many posts in a short time.">從 Google Sheets 讀取尚未發布的貼文後，先依列序排序，再以每次只取出一篇方式發文。這樣可控制發文節奏，避免一次排程連續發布多則，帳號在短時間內出現大量貼文。</p>
+
+                <h3 class="stage-subtitle" data-lang-zh="2. 兩階段發文" data-lang-en="2. Two-Stage Posting">2. 兩階段發文</h3>
+                <p class="stage-text" data-lang-zh="依 Threads Graph API 規範分兩階段執行：先呼叫 <code>/threads</code> 建立媒體容器並取得 <code>creation_id</code>，再呼叫 <code>/threads_publish</code> 正式發布。這是官方規定的發文流程，無法合併成單一請求。" data-lang-en="Publishing follows the Threads Graph API in two stages: first call <code>/threads</code> to create a media container and obtain a <code>creation_id</code>, then call <code>/threads_publish</code> to publish. This is the official posting sequence and cannot be combined into a single request.">依 Threads Graph API 規範分兩階段執行：先呼叫 <code>/threads</code> 建立媒體容器並取得 <code>creation_id</code>，再呼叫 <code>/threads_publish</code> 正式發布。這是官方規定的發文流程，無法合併成單一請求。</p>
+
+                <h3 class="stage-subtitle" data-lang-zh="3. 防重複回寫" data-lang-en="3. Write-Back to Prevent Duplicates">3. 防重複回寫</h3>
+                <p class="stage-text" data-lang-zh="發布成功後，立即將該筆資料的 Checkbox 寫回 <code>TRUE</code>，此回寫動作是避免「排程重跑導致同一篇貼文重複發布」的關鍵機制。" data-lang-en="After a successful publish, that row’s Checkbox is immediately written back to <code>TRUE</code>. This write-back is the key mechanism that prevents “a schedule rerun causes the same post to be published again.”">發布成功後，立即將該筆資料的 Checkbox 寫回 <code>TRUE</code>，此回寫動作是避免「排程重跑導致同一篇貼文重複發布」的關鍵機制。</p>
+
+                <div class="project-image-container" style="margin: 20px 0; text-align: center;">
+                    <img src="images/post_Threads_life.png" alt="n8n Threads 自動發文工作流截圖（生活觀察版）" style="max-width: 100%; height: auto; border-radius: 8px; border: 1px solid var(--border-color, #e0e0e0);">
+                    <p class="image-caption" style="font-size: 0.9em; color: #666; margin-top: 8px;" data-lang-zh="n8n Threads 自動發文工作流截圖" data-lang-en="n8n Threads auto-posting workflow screenshot">n8n Threads 自動發文工作流截圖</p>
+                </div>
+
+                <h3 class="stage-subtitle" data-lang-zh="工作流執行路徑" data-lang-en="Workflow Execution Path">工作流執行路徑</h3>
+                <div class="workflow-diagram">
+                    <div class="workflow-step">
+                        <span class="workflow-step-num">1</span>
+                        <span class="workflow-step-text" data-lang-zh="<strong>設定與憑證檢查：</strong> Schedule Trigger ➔ Edit Fields (Set Config) ➔ Code (Seed Token or Check Refresh) ➔ IF (Just Seeded) / IF (Need Refresh)" data-lang-en="<strong>Setup &amp; credential check:</strong> Schedule Trigger ➔ Edit Fields (Set Config) ➔ Code (Seed Token or Check Refresh) ➔ IF (Just Seeded) / IF (Need Refresh)"><strong>設定與憑證檢查：</strong> Schedule Trigger ➔ Edit Fields (Set Config) ➔ Code (Seed Token or Check Refresh) ➔ IF (Just Seeded) / IF (Need Refresh)</span>
+                    </div>
+                    <div class="workflow-arrow">↓</div>
+                    <div class="workflow-step">
+                        <span class="workflow-step-num">2</span>
+                        <span class="workflow-step-text" data-lang-zh="<strong>讀取待發布貼文：</strong> Google Sheets (Read Pending Posts) ➔ Filter (Unpublished Posts) ➔ Sort (By Row Number) ➔ Limit (One Post)" data-lang-en="<strong>Read pending posts:</strong> Google Sheets (Read Pending Posts) ➔ Filter (Unpublished Posts) ➔ Sort (By Row Number) ➔ Limit (One Post)"><strong>讀取待發布貼文：</strong> Google Sheets (Read Pending Posts) ➔ Filter (Unpublished Posts) ➔ Sort (By Row Number) ➔ Limit (One Post)</span>
+                    </div>
+                    <div class="workflow-arrow">↓</div>
+                    <div class="workflow-step">
+                        <span class="workflow-step-num">3</span>
+                        <span class="workflow-step-text" data-lang-zh="<strong>兩階段發文：</strong> Code (Attach Token from Static Data) ➔ HTTP Request (Create Threads Container) ➔ HTTP Request (Publish Threads Post)" data-lang-en="<strong>Two-stage posting:</strong> Code (Attach Token from Static Data) ➔ HTTP Request (Create Threads Container) ➔ HTTP Request (Publish Threads Post)"><strong>兩階段發文：</strong> Code (Attach Token from Static Data) ➔ HTTP Request (Create Threads Container) ➔ HTTP Request (Publish Threads Post)</span>
+                    </div>
+                    <div class="workflow-arrow">↓</div>
+                    <div class="workflow-step">
+                        <span class="workflow-step-num">4</span>
+                        <span class="workflow-step-text" data-lang-zh="<strong>回寫發布狀態：</strong> Google Sheets (Mark Published)（將 Checkbox 寫回 TRUE，避免重複發布）" data-lang-en="<strong>Write back publish status:</strong> Google Sheets (Mark Published) (set Checkbox to TRUE to prevent duplicate posts)"><strong>回寫發布狀態：</strong> Google Sheets (Mark Published)（將 Checkbox 寫回 TRUE，避免重複發布）</span>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 06 效率估算 -->
+            <section id="stage6" class="timeline-card">
+                <h2 class="stage-title"><span data-lang-zh="效率估算" data-lang-en="Efficiency Estimate">效率估算</span></h2>
+                <p class="stage-text" data-lang-zh="根據過去手動整理新聞摘要、手動排版貼文的經驗估算，這套流程大約可節省每天 30–60 分鐘的重複性工作時間。節省下來的時間讓我得以將心力投入於 Prompt 品質調整與內容策略規劃，而非重複性的複製貼上作業。" data-lang-en="Based on past experience of manually preparing news summaries and formatting posts, this workflow saves roughly 30–60 minutes of repetitive work each day. The time saved can be reinvested in prompt quality tuning and content strategy, instead of repetitive copy-and-paste work.">根據過去手動整理新聞摘要、手動排版貼文的經驗估算，這套流程大約可節省每天 30–60 分鐘的重複性工作時間。節省下來的時間讓我得以將心力投入於 Prompt 品質調整與內容策略規劃，而非重複性的複製貼上作業。</p>
+
+                <div class="project-image-container" style="margin: 20px 0; text-align: center;">
+                    <img src="images/gmail_screenshot.jpg" alt="Email 新聞摘要發送截圖" style="max-width: 100%; height: auto; border-radius: 8px; border: 1px solid var(--border-color, #e0e0e0);">
+                    <p class="image-caption" style="font-size: 0.9em; color: #666; margin-top: 8px;" data-lang-zh="Email 新聞摘要發送截圖" data-lang-en="Email news-summary delivery screenshot">Email 新聞摘要發送截圖</p>
+                </div>
+                <div class="project-image-container" style="margin: 20px 0; text-align: center;">
+                    <img src="images/discord_screenshot.png" alt="Discord 新聞摘要貼文發布截圖" style="max-width: 100%; height: auto; border-radius: 8px; border: 1px solid var(--border-color, #e0e0e0);">
+                    <p class="image-caption" style="font-size: 0.9em; color: #666; margin-top: 8px;" data-lang-zh="Discord 新聞摘要貼文發布截圖" data-lang-en="Discord news-summary post screenshot">Discord 新聞摘要貼文發布截圖</p>
+                </div>
+                <div class="project-image-container" style="margin: 20px 0; text-align: center;">
+                    <div class="threads-result-row">
+                        <img src="images/threads1.jpg" alt="Threads 貼文發布圖 1">
+                        <img src="images/threads2.jpg" alt="Threads 貼文發布圖 2">
+                    </div>
+                    <p class="image-caption" style="font-size: 0.9em; color: #666; margin-top: 8px;" data-lang-zh="Threads 貼文發布圖" data-lang-en="Threads published posts">Threads 貼文發布圖</p>
+                </div>
+            </section>
+
+            <!-- 07 反思與建議 -->
+            <section id="stage7" class="timeline-card">
+                <h2 class="stage-title"><span data-lang-zh="反思與建議" data-lang-en="Reflections &amp; Recommendations">反思與建議</span></h2>
+
+                <h3 class="stage-subtitle" data-lang-zh="專案完成後的心得" data-lang-en="Takeaways After Completing the Project">專案完成後的心得</h3>
+                <ul class="details">
+                    <li data-lang-zh="<strong>資料品質很重要：</strong>同一個 GPT-4o-mini 模型，輸入乾淨資料與輸入原始雜訊資料，輸出品質差異明顯。" data-lang-en="<strong>Data quality matters:</strong> With the same GPT-4o-mini model, clean input versus raw noisy input produces clearly different output quality."><strong>資料品質很重要：</strong>同一個 GPT-4o-mini 模型，輸入乾淨資料與輸入原始雜訊資料，輸出品質差異明顯。</li>
+                    <li data-lang-zh="<strong>明確定義輸出規格是穩定性的關鍵：</strong>結構化的 Input-Output Schema 搭配自定義的範例，是使 LLM 輸出穩定到可直接串接自動化流程的關鍵，僅以自然語言描述「請輸出 JSON」並不足夠。" data-lang-en="<strong>A clear output spec is key to stability:</strong> A structured Input-Output Schema plus custom examples is what makes LLM output stable enough to plug into automation. Simply saying “please output JSON” in natural language is not enough."><strong>明確定義輸出規格是穩定性的關鍵：</strong>結構化的 Input-Output Schema 搭配自定義的範例，是使 LLM 輸出穩定到可直接串接自動化流程的關鍵，僅以自然語言描述「請輸出 JSON」並不足夠。</li>
+                    <li data-lang-zh="<strong>Low-Code 節省的時間需要投入在對的地方：</strong>n8n 省下了重複建構 API 整合的時間，但若這些時間未被投入於 Prompt 設計與資料清洗，系統品質依然無法提升。" data-lang-en="<strong>Time saved by low-code must be spent in the right places:</strong> n8n saved the time of repeatedly rebuilding API integrations, but if that time is not invested in prompt design and data cleaning, system quality still will not improve."><strong>Low-Code 節省的時間需要投入在對的地方：</strong>n8n 省下了重複建構 API 整合的時間，但若這些時間未被投入於 Prompt 設計與資料清洗，系統品質依然無法提升。</li>
+                </ul>
+
+                <h3 class="stage-subtitle" data-lang-zh="未來改善方向" data-lang-en="Future Improvements">未來改善方向</h3>
+                <ul class="details">
+                    <li data-lang-zh="<strong>升級憑證管理機制：</strong>目前 API Key 與 Token 直接寫入工作流的參數節點中，這在本專案階段屬於可接受的取捨；但若要正式上線並供更多使用者操作，應改用身分驗證或集中管理機制，而非分散於各個工作流之中。" data-lang-en="<strong>Upgrade credential management:</strong> API keys and tokens currently live directly in workflow parameter nodes — an acceptable trade-off at this project stage. For a real production rollout used by more people, authentication or centralized credential management should replace credentials scattered across individual workflows."><strong>升級憑證管理機制：</strong>目前 API Key 與 Token 直接寫入工作流的參數節點中，這在本專案階段屬於可接受的取捨；但若要正式上線並供更多使用者操作，應改用身分驗證或集中管理機制，而非分散於各個工作流之中。</li>
+                    <li data-lang-zh="<strong>解決 Threads 憑證過期問題：</strong>Threads Graph API 的存取憑證屬短效性質、會定期過期，一旦過期，發文自動化流程就會中斷。這個風險在開發過程中已意識到，但在本專案的時程與範圍內尚未真正解決。" data-lang-en="<strong>Solve Threads credential expiry:</strong> Threads Graph API access credentials are short-lived and expire on a schedule; once they expire, posting automation breaks. This risk was recognized during development, but it has not been fully solved within this project’s timeline and scope."><strong>解決 Threads 憑證過期問題：</strong>Threads Graph API 的存取憑證屬短效性質、會定期過期，一旦過期，發文自動化流程就會中斷。這個風險在開發過程中已意識到，但在本專案的時程與範圍內尚未真正解決。</li>
+                    <li data-lang-zh="<strong>增加內容成效的回饋機制：</strong>目前生成的內容僅有「是否成功發布」的判斷，並未串接任何互動數據（按讚、留言、點擊）以回頭調整主題選擇。" data-lang-en="<strong>Add a content-performance feedback loop:</strong> Generated content currently only has a published/not-published check, with no engagement data (likes, comments, clicks) feeding back into topic selection."><strong>增加內容成效的回饋機制：</strong>目前生成的內容僅有「是否成功發布」的判斷，並未串接任何互動數據（按讚、留言、點擊）以回頭調整主題選擇。</li>
+                </ul>
+            </section>
+        </article>
+    </main>
+
+    <footer>
+        <p>© 鄭書涵 Shu-Han Zheng | Personal Portfolio</p>
+    </footer>
+
+    <script src="js/common.js"></script>
+    <script>
+        (function initProjectToc() {
+            const links = Array.from(document.querySelectorAll('.project-toc-label, .project-toc-item > a[href^="#"]'));
+            if (!links.length) return;
+
+            const sections = links
+                .map((link) => document.getElementById(link.getAttribute('href').slice(1)))
+                .filter(Boolean);
+
+            const setActive = (id) => {
+                links.forEach((link) => {
+                    link.classList.toggle('is-active', link.getAttribute('href') === `#${id}`);
+                });
+            };
+
+            const observer = new IntersectionObserver(
+                (entries) => {
+                    const visible = entries
+                        .filter((entry) => entry.isIntersecting)
+                        .sort((a, b) => b.intersectionRatio - a.intersectionRatio);
+                    if (visible[0]) setActive(visible[0].target.id);
+                },
+                { rootMargin: '-20% 0px -55% 0px', threshold: [0, 0.25, 0.5, 1] }
+            );
+
+            sections.forEach((section) => observer.observe(section));
+
+            const bindSmoothScroll = (anchor) => {
+                if (anchor.dataset.tocBound === '1') return;
+                anchor.dataset.tocBound = '1';
+                anchor.addEventListener('click', (e) => {
+                    const href = anchor.getAttribute('href');
+                    if (!href || href === '#') return;
+                    const target = document.getElementById(href.slice(1));
+                    if (!target) return;
+                    e.preventDefault();
+                    target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                });
+            };
+
+            links.forEach(bindSmoothScroll);
+
+            const syncSubtitles = () => {
+                document.querySelectorAll('.project-toc-list > .project-toc-item').forEach((item) => {
+                    const link = item.querySelector(':scope > a[href^="#"]');
+                    if (!link) return;
+
+                    const section = document.getElementById(link.getAttribute('href').slice(1));
+                    const subtitleEls = section
+                        ? Array.from(section.querySelectorAll('.stage-subtitle'))
+                        : [];
+
+                    let wrap = item.querySelector(':scope > .project-toc-subs-wrap');
+                    if (!subtitleEls.length) {
+                        if (wrap) wrap.remove();
+                        return;
+                    }
+
+                    if (!wrap) {
+                        wrap = document.createElement('div');
+                        wrap.className = 'project-toc-subs-wrap';
+                        const list = document.createElement('ul');
+                        list.className = 'project-toc-subs';
+                        wrap.appendChild(list);
+                        item.appendChild(wrap);
+                    }
+
+                    const list = wrap.querySelector('.project-toc-subs');
+                    list.replaceChildren(
+                        ...subtitleEls.map((el, index) => {
+                            if (!el.id) el.id = `${section.id}-sub-${index + 1}`;
+                            const li = document.createElement('li');
+                            const subLink = document.createElement('a');
+                            subLink.href = `#${el.id}`;
+                            subLink.textContent = el.textContent.trim();
+                            bindSmoothScroll(subLink);
+                            li.appendChild(subLink);
+                            return li;
+                        })
+                    );
+                });
+            };
+
+            syncSubtitles();
+            document.addEventListener('langchange', syncSubtitles);
+        })();
+    </script>
+</body>
+</html>
